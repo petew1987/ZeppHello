@@ -1,10 +1,5 @@
 /**
  * ZeppHello - Settings App (Runs on Smartphone Zepp App for Android & iOS)
- *
- * TEMPLATE ARCHITECTURE NOTES:
- * - Rendered in the Zepp smartphone app when configuring the mini-app.
- * - Uses declarative UI components (View, Text, Select, Button, Toggle, etc.).
- * - Persists user preferences to settingsStorage, which syncs to watch & companion.
  */
 
 const COLOR_OPTIONS = [
@@ -35,30 +30,33 @@ AppSettingsPage({
     return View(
       {
         style: {
-          padding: '20px 16px',
-          backgroundColor: '#090d16',
+          padding: '16px 12px',
+          backgroundColor: '#ffffff',
+          color: '#111827',
           minHeight: '100%',
           display: 'flex',
           flexDirection: 'column',
-          gap: '16px'
+          gap: '14px',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }
       },
       [
         // Header
         View(
-          { style: { paddingBottom: '12px', borderBottom: '1px solid #1e293b' } },
+          { style: { paddingBottom: '10px', borderBottom: '1px solid #e5e7eb' } },
           [
             Text({
               style: {
-                fontSize: '20px',
-                fontWeight: '600',
-                color: '#f8fafc',
-                marginBottom: '4px'
+                fontSize: '18px',
+                fontWeight: '700',
+                color: '#111827',
+                marginBottom: '4px',
+                lineHeight: '24px'
               }
             }, 'ZeppHello Customizer'),
             Text({
-              style: { fontSize: '13px', color: '#94a3b8' }
-            }, 'Configure default text color for Amazfit smartwatch')
+              style: { fontSize: '13px', color: '#4b5563', lineHeight: '18px' }
+            }, 'Configure default text color for Amazfit smartwatch app.')
           ]
         ),
 
@@ -67,15 +65,15 @@ AppSettingsPage({
           {
             title: 'TEXT COLOR THEME',
             style: {
-              backgroundColor: '#111827',
-              border: '1px solid #1f2937',
+              backgroundColor: '#f9fafb',
+              border: '1px solid #e5e7eb',
               borderRadius: '12px',
-              padding: '16px'
+              padding: '14px'
             }
           },
           [
             Text({
-              style: { fontSize: '12px', color: '#94a3b8', marginBottom: '12px', lineHeight: '18px' }
+              style: { fontSize: '13px', color: '#374151', marginBottom: '10px', lineHeight: '20px' }
             }, 'Select the default highlight color for the Hello message on your watch:'),
 
             Select({
@@ -91,15 +89,15 @@ AppSettingsPage({
           {
             title: 'QUICK SWATCHES',
             style: {
-              backgroundColor: '#111827',
-              border: '1px solid #1f2937',
+              backgroundColor: '#f9fafb',
+              border: '1px solid #e5e7eb',
               borderRadius: '12px',
-              padding: '16px'
+              padding: '14px'
             }
           },
           [
             Text({
-              style: { fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }
+              style: { fontSize: '13px', color: '#374151', marginBottom: '10px', lineHeight: '20px' }
             }, 'Tap any swatch to apply instantly:'),
 
             View(
@@ -107,7 +105,7 @@ AppSettingsPage({
                 style: {
                   display: 'flex',
                   flexDirection: 'row',
-                  gap: '10px',
+                  gap: '8px',
                   flexWrap: 'wrap'
                 }
               },
@@ -118,11 +116,11 @@ AppSettingsPage({
                   style: {
                     fontSize: '12px',
                     fontWeight: '600',
-                    padding: '8px 14px',
+                    padding: '8px 12px',
                     backgroundColor: opt.value,
-                    color: '#000000',
+                    color: '#ffffff',
                     borderRadius: '8px',
-                    border: isActive ? '2px solid #ffffff' : 'none'
+                    border: isActive ? '2px solid #111827' : 'none'
                   },
                   onClick: () => {
                     props.settingsStorage.setItem('textColor', opt.value)
@@ -137,19 +135,19 @@ AppSettingsPage({
         View(
           {
             style: {
-              backgroundColor: '#0d131f',
-              border: '1px solid #1f2937',
+              backgroundColor: '#f3f4f6',
+              border: '1px solid #e5e7eb',
               borderRadius: '12px',
-              padding: '16px',
-              marginTop: '8px'
+              padding: '14px',
+              marginTop: '4px'
             }
           },
           [
             Text({
-              style: { fontSize: '13px', fontWeight: '600', color: '#38bdf8', marginBottom: '6px' }
-            }, '💡 Developer Template Notes'),
+              style: { fontSize: '13px', fontWeight: '700', color: '#1f2937', marginBottom: '4px', lineHeight: '20px' }
+            }, 'Developer Template Notes'),
             Text({
-              style: { fontSize: '12px', color: '#94a3b8', lineHeight: '18px' }
+              style: { fontSize: '12px', color: '#4b5563', lineHeight: '18px' }
             }, 'To build your own app, modify page/index.js for watch UI, app-side/index.js for APIs, and setting/index.js for user options.')
           ]
         )
