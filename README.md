@@ -3,6 +3,26 @@
 
 A production-ready starter template and interactive testing environment for **Zepp OS 3.0 / 2.x** mini-apps targeting Amazfit smartwatches (Round 466x466 AMOLED screen, e.g. Amazfit Active 3 / Balance / GTR series).
 
+Repository: [https://github.com/petew1987/ZeppHello/](https://github.com/petew1987/ZeppHello/)
+
+> ⚠️ **NOTE:** If you change or rename your GitHub repository, you must update the repository identifier in `scripts/generate-qr.js` and in the web UI.
+
+---
+
+## ⚙️ Vital GitHub Repository Setup (Required for Zepp App QR Code)
+
+For the QR code to install wirelessly on your watch via Zepp App Developer Mode without download errors:
+
+1. **Repository Visibility: MUST BE PUBLIC**
+   - In GitHub, go to **Settings** &rarr; **Danger Zone** &rarr; **Change repository visibility** &rarr; **Make public**.
+   - *Why:* The Zepp App scanner downloads package files anonymously over HTTPS. If the repository is private, GitHub denies access and returns a 404 error to the watch app.
+2. **Workflow Permissions: Read and Write**
+   - Go to **Settings** &rarr; **Actions** &rarr; **General** &rarr; scroll to **Workflow permissions**.
+   - Select **"Read and write permissions"** and check **"Allow GitHub Actions to create and approve pull requests"**.
+   - *Why:* The `.github/workflows/build.yml` Action needs write access to create the GitHub Release and upload `zepphello.zpk` and `zepphello.zab`.
+3. **Trigger Build Workflow:**
+   - Either push a commit to `main`, or go to **Actions** &rarr; **Build ZeppHello Package by Stealth Apps** &rarr; click **Run workflow**.
+
 ---
 
 ## 🚀 Features

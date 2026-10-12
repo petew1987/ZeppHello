@@ -1,9 +1,13 @@
 name: Build & Release Zepp OS App
 
+# NOTE: If you rename or fork this repository, ensure your GitHub repository settings:
+# 1. Repository Visibility: Must be PUBLIC (so Zepp App can download the release without login).
+# 2. Workflow Permissions: Go to Repo Settings -> Actions -> General -> Workflow permissions -> Select "Read and write permissions".
+
 on:
-  workflow_dispatch: # Allows manual trigger from browser
+  workflow_dispatch: # Allows manual trigger from Actions tab in browser
   push:
-    branches: [ main ]
+    branches: [ main, master ]
 
 permissions:
   contents: write
@@ -27,7 +31,7 @@ jobs:
       - name: Install Zeus CLI
         run: npm install -g @zeppos/zeus-cli
 
-      - name: Build Zepp OS Package (.zab)
+      - name: Build Zepp OS Package (.zab and .zpk)
         run: |
           zeus build
           ls -lh dist/
@@ -54,29 +58,25 @@ jobs:
       - name: Upload Build Artifacts (.zab, .zpk, and QR codes)
         uses: actions/upload-artifact@v4
         with:
-          name: zepp-os-zepphello
+          name: zepphello-packages
           path: |
             dist/*.zab
             dist/*.zpk
             dist/*.png
 
       - name: Create or Update GitHub Release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "ZeppHello Template v1.0.0 by Stealth Apps"
+          name: "ZeppHello v1.0.0 by Stealth Apps"
           body: |
             ## ⌚ ZeppHello — Zepp OS Template by Stealth Apps
             
-            Zepp OS 3.0 / 2.x Mini-App template for Amazfit smartwatches (Round 466x466 AMOLED).
-            
-            ### 📱 Install via Zepp App Developer Mode:
-            Scan the QR code shown in the GitHub Actions Run Summary or use the `zpkd1://` link:
-            `zpkd1://${{ github.server_url }}/${{ github.repository }}/releases/latest/download/zepphello.zab`
+            Install via Zepp App Developer Mode by scanning the QR code in the Action Run Summary or downloading the `.zpk` / `.zab` package below.
           files: |
-            dist/zepphello.zab
             dist/zepphello.zpk
+            dist/zepphello.zab
             dist/install-qrcode.png
           draft: false
           prerelease: false

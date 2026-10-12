@@ -8,11 +8,13 @@ import {
   Check,
   Copy,
   RefreshCw,
-  LayoutGrid,
-  CheckCircle2,
   Sparkles,
   ExternalLink,
-  ChevronRight
+  Download,
+  Globe,
+  Github,
+  CheckCircle2,
+  Info
 } from 'lucide-react';
 import QRCode from 'qrcode';
 
@@ -26,7 +28,7 @@ const COLORS = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'emulator' | 'settings' | 'builder' | 'docs'>('emulator');
+  const [activeTab, setActiveTab] = useState<'builder' | 'emulator' | 'settings' | 'docs'>('builder');
   const [watchView, setWatchView] = useState<'page' | 'app-widget' | 'secondary-widget'>('page');
   const [currentColorHex, setCurrentColorHex] = useState('#10b981');
   const [defaultColorHex, setDefaultColorHex] = useState('#10b981');
@@ -36,18 +38,42 @@ export default function App() {
   const [isBuilding, setIsBuilding] = useState(false);
   const [buildSuccess, setBuildSuccess] = useState(false);
 
-  const zpkd1Url = 'zpkd1://github.com/stealth-apps/zepphello/releases/latest/download/zepphello.zab';
+  // QR Code Source Configuration
+  const [qrSource, setQrSource] = useState<'github' | 'live' | 'custom'>('github');
+  // NOTE: If changing or renaming your GitHub repository, update this value:
+  const [githubRepo, setGithubRepo] = useState('petew1987/ZeppHello');
+  const [packageFormat, setPackageFormat] = useState<'zpk' | 'zab'>('zpk');
+  const [customUrl, setCustomUrl] = useState('');
 
-  // Generate QR code for Zepp App Developer Mode (`zpkd1://` protocol)
+  // Compute active download URL and scannable zpkd1:// URI
+  const getActiveDownloadUrl = () => {
+    if (qrSource === 'github') {
+      const cleanRepo = githubRepo.trim() || 'petew1987/ZeppHello';
+      return `https://github.com/${cleanRepo}/releases/latest/download/zepphello.${packageFormat}`;
+    }
+    if (qrSource === 'live') {
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://example.com';
+      return `${origin}/zepphello.${packageFormat}`;
+    }
+    return customUrl.trim() || 'https://example.com/zepphello.zpk';
+  };
+
+  const getActiveZpkd1Url = () => {
+    const rawUrl = getActiveDownloadUrl();
+    return `zpkd1://${rawUrl.replace(/^https?:\/\//, '')}`;
+  };
+
+  // Regenerate QR code whenever target URL changes
   useEffect(() => {
-    QRCode.toDataURL(zpkd1Url, {
+    const zpkd1Uri = getActiveZpkd1Url();
+    QRCode.toDataURL(zpkd1Uri, {
       width: 280,
       margin: 2,
       color: { dark: '#000000', light: '#ffffff' }
     })
       .then((url: string) => setQrDataUrl(url))
       .catch((err: unknown) => console.error('QR generation error:', err));
-  }, []);
+  }, [qrSource, githubRepo, packageFormat, customUrl]);
 
   // When clicking the watch face, cycle through colors and increment taps
   const handleWatchClick = () => {
@@ -69,11 +95,11 @@ export default function App() {
     setTimeout(() => {
       setIsBuilding(false);
       setBuildSuccess(true);
-    }, 1000);
+    }, 800);
   };
 
   const copyScheme = () => {
-    navigator.clipboard.writeText(zpkd1Url);
+    navigator.clipboard.writeText(getActiveZpkd1Url());
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -83,7 +109,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-black text-slate-100 font-sans antialiased selection:bg-teal-500/30 selection:text-teal-200">
       {/* Top Header with responsive wrapping */}
-      <header className="border-b border-slate-900 bg-black/90 backdrop-blur sticky top-0 z-50">
+      <header className="border-b border-slate-900 bg-black/95 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           {/* Logo & Company */}
           <div className="flex items-center gap-3 min-w-0">
@@ -97,12 +123,23 @@ export default function App() {
                   Stealth Apps Template
                 </span>
               </div>
-              <p className="text-xs text-slate-400 truncate">Zepp OS 3.0 / 2.x Builder & Tester</p>
+              <p className="text-xs text-slate-400 truncate">petew1987/ZeppHello · Amazfit Builder & Tester</p>
             </div>
           </div>
 
           {/* Navigation Menus with Flex-Wrap */}
           <nav className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <button
+              onClick={() => setActiveTab('builder')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                activeTab === 'builder'
+                  ? 'bg-teal-600 text-white shadow-sm'
+                  : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+              }`}
+            >
+              <QrCode className="w-3.5 h-3.5" /> QR Installer
+            </button>
+
             <button
               onClick={() => setActiveTab('emulator')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
@@ -126,17 +163,6 @@ export default function App() {
             </button>
 
             <button
-              onClick={() => setActiveTab('builder')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                activeTab === 'builder'
-                  ? 'bg-teal-600 text-white shadow-sm'
-                  : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
-            >
-              <QrCode className="w-3.5 h-3.5" /> QR Installer
-            </button>
-
-            <button
               onClick={() => setActiveTab('docs')}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
                 activeTab === 'docs'
@@ -152,7 +178,248 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
-        {/* TAB 1: EMULATOR & WATCH TESTER */}
+        {/* TAB 1: BUILDER & QR CODE INSTALLER */}
+        {activeTab === 'builder' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Main Installer Card */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-slate-950 border border-slate-900 space-y-6">
+              <div>
+                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-teal-400" /> Zepp App Developer Mode Installer
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Scan this QR code using the Developer Mode scanner in the Zepp App to wirelessly flash the app to your Amazfit watch.
+                </p>
+              </div>
+
+              {/* Source Selector Tabs */}
+              <div className="space-y-3">
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
+                  Package Download Source:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <button
+                    onClick={() => setQrSource('github')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      qrSource === 'github'
+                        ? 'bg-teal-950/40 border-teal-500 text-white shadow-sm'
+                        : 'bg-black border-slate-900 text-slate-400 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-semibold text-xs text-teal-300">
+                      <Github className="w-3.5 h-3.5" /> GitHub Releases
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1">
+                      Direct release package from petew1987/ZeppHello.
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setQrSource('live')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      qrSource === 'live'
+                        ? 'bg-teal-950/40 border-teal-500 text-white shadow-sm'
+                        : 'bg-black border-slate-900 text-slate-400 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-semibold text-xs text-teal-300">
+                      <Globe className="w-3.5 h-3.5" /> Live Web Server
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1">
+                      Instant testing hosted directly on this dev server.
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setQrSource('custom')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      qrSource === 'custom'
+                        ? 'bg-teal-950/40 border-teal-500 text-white shadow-sm'
+                        : 'bg-black border-slate-900 text-slate-400 hover:border-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-semibold text-xs text-teal-300">
+                      <ExternalLink className="w-3.5 h-3.5" /> Custom URL
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1">
+                      Provide any direct HTTPS link (S3, R2, Dropbox dl=1).
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Source-specific Configuration Inputs */}
+              {qrSource === 'github' && (
+                <div className="p-4 rounded-xl bg-black border border-slate-900 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-xs font-semibold text-slate-300">
+                      GitHub Repository (owner/repo):
+                    </label>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      https://github.com/{githubRepo}
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={githubRepo}
+                    onChange={(e) => setGithubRepo(e.target.value)}
+                    placeholder="petew1987/ZeppHello"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
+                  />
+                  <div className="flex items-start gap-2 text-[11px] text-slate-400 leading-relaxed pt-1">
+                    <Info className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Important note:</strong> If you change or rename your repository in GitHub, you must update this repository name here and in <code>scripts/generate-qr.js</code>.
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {qrSource === 'custom' && (
+                <div className="p-4 rounded-xl bg-black border border-slate-900 space-y-3">
+                  <label className="text-xs font-semibold text-slate-300 block">
+                    Direct Download URL (pointing directly to .zpk or .zab file):
+                  </label>
+                  <input
+                    type="text"
+                    value={customUrl}
+                    onChange={(e) => setCustomUrl(e.target.value)}
+                    placeholder="https://example.com/downloads/zepphello.zpk"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
+                  />
+                </div>
+              )}
+
+              {/* Package Format Choice */}
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs text-slate-400 font-medium">Target Package:</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPackageFormat('zpk')}
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                      packageFormat === 'zpk'
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-black text-slate-400 border border-slate-800'
+                    }`}
+                  >
+                    .zpk (Recommended for Amazfit Active 3)
+                  </button>
+                  <button
+                    onClick={() => setPackageFormat('zab')}
+                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                      packageFormat === 'zab'
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-black text-slate-400 border border-slate-800'
+                    }`}
+                  >
+                    .zab (Multi-device archive)
+                  </button>
+                </div>
+              </div>
+
+              {/* QR Display + Instructions */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-4 sm:p-5 rounded-xl bg-black border border-slate-900">
+                {/* QR Code Container */}
+                <div className="md:col-span-5 flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow shrink-0">
+                  {qrDataUrl ? (
+                    <img src={qrDataUrl} alt="Zepp Developer Mode QR Code" className="w-48 h-48 sm:w-56 sm:h-56" />
+                  ) : (
+                    <div className="w-48 h-48 flex items-center justify-center text-slate-400 text-xs">Generating QR...</div>
+                  )}
+                  <span className="text-[10px] text-slate-700 font-mono font-semibold mt-2 text-center">
+                    Protocol: zpkd1:// ({packageFormat.toUpperCase()} package)
+                  </span>
+                </div>
+
+                {/* Instructions & Links */}
+                <div className="md:col-span-7 space-y-3.5">
+                  <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+                    How to Scan and Install:
+                  </h4>
+                  <ol className="text-xs text-slate-400 space-y-2 list-decimal list-inside leading-relaxed">
+                    <li>Open <strong>Zepp App</strong> on your phone.</li>
+                    <li>Go to <strong>Profile &rarr; Settings &rarr; About</strong> and tap the Zepp logo <strong>7 times</strong> until Developer Mode is activated.</li>
+                    <li>Return to <strong>Profile &rarr; [Amazfit Device] &rarr; Developer Mode</strong>.</li>
+                    <li>Tap the <strong>QR scanner icon</strong> (top right) and point your camera at the QR code.</li>
+                  </ol>
+
+                  {/* Actions */}
+                  <div className="pt-2 flex flex-wrap gap-2">
+                    <a
+                      href={getActiveDownloadUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-teal-950 border border-teal-800 text-teal-300 text-xs font-medium hover:bg-teal-900 transition-all flex items-center gap-1.5"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" /> Test Link in Browser
+                    </a>
+
+                    <button
+                      onClick={copyScheme}
+                      className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-800 transition-all flex items-center gap-1.5"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+                      {copied ? 'Copied zpkd1://' : 'Copy zpkd1:// URL'}
+                    </button>
+                  </div>
+
+                  {/* Active Download URL display */}
+                  <div className="text-[10px] text-slate-500 font-mono break-all pt-1">
+                    Direct URL: {getActiveDownloadUrl()}
+                  </div>
+                </div>
+              </div>
+
+              {/* GitHub Repository Setup Requirements Guide */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-900 space-y-3">
+                <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <Github className="w-4 h-4 text-teal-400" /> Essential GitHub Repository Settings
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-400">
+                  <div className="p-3 rounded-lg bg-black border border-slate-900 space-y-1">
+                    <span className="font-semibold text-slate-300 block">1. Repository Visibility: Must Be Public</span>
+                    <p className="leading-relaxed">
+                      The Zepp App does not have your GitHub credentials. If your repository is private, GitHub blocks unauthenticated downloads. Set repository to <strong>Public</strong> in <em>Settings &rarr; Danger Zone &rarr; Change repository visibility</em>.
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-black border border-slate-900 space-y-1">
+                    <span className="font-semibold text-slate-300 block">2. Actions Workflow Permissions</span>
+                    <p className="leading-relaxed">
+                      In your repo, go to <em>Settings &rarr; Actions &rarr; General &rarr; Workflow permissions</em> and select <strong>"Read and write permissions"</strong> so the build workflow can publish release files.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Direct Package Downloads */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-900 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs font-semibold text-slate-300 block">Download Package Files:</span>
+                  <span className="text-[11px] text-slate-400">Save to your device or transfer via Zeus CLI</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href="/zepphello.zpk"
+                    download="zepphello.zpk"
+                    className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-teal-300 font-medium transition-all flex items-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download zepphello.zpk
+                  </a>
+                  <a
+                    href="/zepphello.zab"
+                    download="zepphello.zab"
+                    className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 font-medium transition-all flex items-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download zepphello.zab
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: WATCH EMULATOR & INTERACTIVE TESTER */}
         {activeTab === 'emulator' && (
           <div className="space-y-6">
             {/* View Selector for Watch Screens */}
@@ -329,7 +596,7 @@ export default function App() {
                     onClick={() => setActiveTab('builder')}
                     className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-medium text-xs transition-all border border-slate-800 flex items-center gap-1.5"
                   >
-                    <QrCode className="w-3.5 h-3.5" /> Zepp App QR Code
+                    <QrCode className="w-3.5 h-3.5" /> Open QR Installer
                   </button>
                 </div>
               </div>
@@ -337,7 +604,7 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: SETTINGS (Zepp App Smartphone UI Simulator) */}
+        {/* TAB 3: SETTINGS (Zepp App Smartphone UI Simulator) */}
         {activeTab === 'settings' && (
           <div className="max-w-2xl mx-auto space-y-6">
             <div className="p-5 sm:p-6 rounded-2xl bg-slate-950 border border-slate-900 space-y-5">
@@ -402,84 +669,6 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: BUILDER & QR CODE INSTALLER */}
-        {activeTab === 'builder' && (
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="p-5 sm:p-6 rounded-2xl bg-slate-950 border border-slate-900 space-y-5">
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <QrCode className="w-4 h-4 text-teal-400" /> Zepp App Developer Mode QR Installer
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Scan this QR code with the Zepp App to wirelessly install your mini-app onto your Amazfit smartwatch.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center p-4 sm:p-5 rounded-xl bg-black border border-slate-900">
-                {/* QR Code Container */}
-                <div className="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow shrink-0">
-                  {qrDataUrl ? (
-                    <img src={qrDataUrl} alt="Zepp Developer Mode QR Code" className="w-48 h-48 sm:w-56 sm:h-56" />
-                  ) : (
-                    <div className="w-48 h-48 flex items-center justify-center text-slate-400 text-xs">Generating QR...</div>
-                  )}
-                  <span className="text-[10px] text-slate-700 font-mono font-semibold mt-2">
-                    Protocol: zpkd1:// (Recognized by Zepp App)
-                  </span>
-                </div>
-
-                {/* Step-by-Step Instructions with Wrap */}
-                <div className="space-y-3.5">
-                  <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
-                    How to Install Step-by-Step:
-                  </h4>
-                  <ol className="text-xs text-slate-400 space-y-2 list-decimal list-inside leading-relaxed">
-                    <li>Open <strong>Zepp App</strong> on your phone.</li>
-                    <li>Go to <strong>Profile &rarr; Settings &rarr; About</strong> and tap the Zepp logo <strong>7 times</strong> to enable Developer Mode.</li>
-                    <li>Return to <strong>Profile &rarr; [Amazfit Device] &rarr; Developer Mode</strong>.</li>
-                    <li>Tap the <strong>QR scanner icon</strong> (top right) and scan the QR code!</li>
-                  </ol>
-
-                  {/* Copy URL Scheme Box with break-all to prevent overflow */}
-                  <div className="pt-1">
-                    <button
-                      onClick={copyScheme}
-                      className="w-full py-2 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] font-mono text-teal-300 flex items-center justify-between gap-2 text-left transition-all"
-                    >
-                      <span className="truncate break-all">zpkd1://.../zepphello.zab</span>
-                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Build Action Buttons */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={triggerBuild}
-                    disabled={isBuilding}
-                    className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white font-medium text-xs transition-all flex items-center gap-1.5 shadow"
-                  >
-                    {isBuilding ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-                    {isBuilding ? 'Building Package...' : 'Simulate Build (.zab)'}
-                  </button>
-
-                  {buildSuccess && (
-                    <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Package compiled successfully
-                    </span>
-                  )}
-                </div>
-
-                <span className="text-xs text-slate-400">
-                  Published by Stealth Apps
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* TAB 4: TEMPLATE CODEBASE GUIDE */}
         {activeTab === 'docs' && (
           <div className="max-w-4xl mx-auto space-y-6">
@@ -538,7 +727,7 @@ export default function App() {
               </div>
 
               <div className="p-3.5 rounded-xl bg-teal-950/20 border border-teal-900/40 text-xs text-teal-300 flex items-center justify-between gap-3">
-                <span>Template created and maintained by <strong>Stealth Apps</strong>.</span>
+                <span>Repository: <strong>https://github.com/petew1987/ZeppHello/</strong> (Stealth Apps)</span>
                 <span className="font-mono text-[11px] text-teal-400">Zepp OS v2.x / v3.x Ready</span>
               </div>
             </div>
