@@ -1,0 +1,10 @@
+{
+  "name": "Aurora Tracker - Zepp OS Amazfit Mini-App",
+  "description": "Zepp OS 3.0 / 2.x Mini-App for Amazfit Active 3 with interactive 466x466 AMOLED watch emulator and live NOAA space weather engine.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

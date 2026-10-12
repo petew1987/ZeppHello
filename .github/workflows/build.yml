@@ -1,0 +1,82 @@
+name: Build & Release Zepp OS App
+
+on:
+  workflow_dispatch: # Allows manual trigger from your browser
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Aurora Tracker Zepp OS Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install || npm install --legacy-peer-deps
+
+      - name: Install Zeus CLI
+        run: npm install -g @zeppos/zeus-cli
+
+      - name: Build Zepp OS Package (.zab)
+        run: |
+          zeus build
+          ls -lh dist/
+          # Extract .zpk from .zab archive for direct single-device flashing
+          cd dist
+          ZAB_FILE=$(ls *.zab 2>/dev/null | head -n 1)
+          if [ -n "$ZAB_FILE" ] && [ -f "$ZAB_FILE" ]; then
+            echo "Processing $ZAB_FILE..."
+            cp "$ZAB_FILE" aurora-tracker.zab
+            mkdir -p extracted_zab
+            unzip -o "$ZAB_FILE" -d extracted_zab || true
+            ZPK_FOUND=$(find extracted_zab -name "*.zpk" | head -n 1)
+            if [ -n "$ZPK_FOUND" ]; then
+              cp "$ZPK_FOUND" aurora-tracker.zpk
+              echo "Created aurora-tracker.zpk from $ZPK_FOUND"
+            fi
+          fi
+          cd ..
+          ls -lh dist/
+
+      - name: Generate QR Code & Job Summary
+        run: |
+          node scripts/generate-qr.js
+
+      - name: Upload Build Artifacts (.zab, .zpk, and QR codes)
+        uses: actions/upload-artifact@v4
+        with:
+          name: zepp-os-aurora-tracker
+          path: |
+            dist/*.zab
+            dist/*.zpk
+            dist/*.png
+
+      - name: Create or Update GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Aurora Tracker Zepp OS v1.0.0"
+          body: |
+            ## 🌌 Aurora Tracker for Amazfit Active 3 (Zepp OS 3.0 / 2.x)
+            
+            Install via Zepp App Developer Mode by scanning the QR code in the Action Run Summary or downloading the `.zab` / `.zpk` packages below.
+          files: |
+            dist/aurora-tracker.zab
+            dist/aurora-tracker.zpk
+            dist/install-qrcode.png
+            dist/install-qrcode-zpk.png
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
