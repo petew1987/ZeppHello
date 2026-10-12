@@ -1,8 +1,9 @@
 /**
  * ZeppHello - Watch Page UI (Zepp OS 2.x & 3.0 Compatible)
+ * Publisher: Stealth Apps
  * Target Device: Amazfit Active 3 (Round 466x466 AMOLED Screen, Center: x=233, y=233)
  *
- * CODEBASE ARCHITECTURE NOTES (Template Guide):
+ * CODEBASE ARCHITECTURE NOTES (Stealth Apps Template Guide):
  * 1. page/index.js: The main watch screen UI. Uses hmUI.createWidget for rendering
  *    text, buttons, arcs, and shapes on the watch canvas.
  * 2. app-side/index.js: Companion background service running on the mobile phone
@@ -22,13 +23,13 @@ const SCREEN_SIZE = 466
 const CENTER_X = 233
 const CENTER_Y = 233
 
-// Vibrant AMOLED Color Palette
+// Vibrant AMOLED Color Palette (Core Purple default)
 const COLORS = [
+  { name: 'Purple', hex: '#a855f7', int: 0xa855f7 },
   { name: 'Emerald', hex: '#10b981', int: 0x10b981 },
   { name: 'Cyan', hex: '#06b6d4', int: 0x06b6d4 },
   { name: 'Amber', hex: '#f59e0b', int: 0xf59e0b },
-  { name: 'Pink', hex: '#ec4899', int: 0xec4899 },
-  { name: 'Violet', hex: '#8b5cf6', int: 0x8b5cf6 },
+  { name: 'Rose', hex: '#f43f5e', int: 0xf43f5e },
   { name: 'Sky', hex: '#38bdf8', int: 0x38bdf8 }
 ]
 
@@ -51,8 +52,7 @@ Page(
     },
 
     onInit() {
-      console.log('[ZeppHello] Watch page initialized for round 466x466 display')
-      // Read initial color preference from globalData if set by companion
+      console.log('[ZeppHello] Watch page initialized by Stealth Apps for round 466x466 display')
       try {
         const app = typeof getApp === 'function' ? getApp() : null
         if (app && app._options && app._options.globalData && app._options.globalData.textColor) {
@@ -75,7 +75,6 @@ Page(
     },
 
     createBackgroundDesign() {
-      // Decorative background arc framing the 466x466 circular screen
       if (typeof hmUI !== 'undefined') {
         this.widgets.bgArc = hmUI.createWidget(hmUI.widget.ARC, {
           x: 36,
@@ -103,11 +102,10 @@ Page(
         text_size: 14,
         align_h: hmUI.align.CENTER_H,
         align_v: hmUI.align.CENTER_V,
-        text: 'ZEPP OS TEMPLATE APP'
+        text: 'STEALTH APPS · ZEPP OS'
       })
 
-      // 2. Main interactive Hello Button / Text container
-      // Tapping this cycles through vibrant AMOLED colors and increments the click counter.
+      // 2. Main interactive Hello Button
       this.widgets.helloBtn = hmUI.createWidget(hmUI.widget.BUTTON, {
         x: 83,
         y: 140,
@@ -116,8 +114,8 @@ Page(
         normal_color: 0x0f172a,
         press_color: 0x1e293b,
         radius: 24,
-        text: 'Hello, Zepp OS!',
-        text_size: 32,
+        text: 'Hello!',
+        text_size: 38,
         color: this.state.currentColor,
         click_func: () => {
           this.onHelloTap()
@@ -134,7 +132,7 @@ Page(
         text_size: 18,
         align_h: hmUI.align.CENTER_H,
         align_v: hmUI.align.CENTER_V,
-        text: `Taps: 0 · Color: ${this.state.colorName}`
+        text: `Taps: 0 · ${this.state.colorName}`
       })
 
       // 4. Instructions label
@@ -147,7 +145,7 @@ Page(
         text_size: 12,
         align_h: hmUI.align.CENTER_H,
         align_v: hmUI.align.CENTER_V,
-        text: 'Tap the button above to change color. Customize default in Zepp App settings.'
+        text: 'Tap button to cycle color. Set default in Zepp App.'
       })
 
       // 5. Sync / Companion Test Button
@@ -156,8 +154,8 @@ Page(
         y: 380,
         w: 160,
         h: 40,
-        normal_color: 0x115e59,
-        press_color: 0x0f766e,
+        normal_color: 0x6b21a8, // Purple 800
+        press_color: 0x581c87,  // Purple 900
         radius: 12,
         text: 'SYNC SETTINGS',
         text_size: 14,
@@ -175,20 +173,16 @@ Page(
       this.state.currentColor = activeColor.int
       this.state.colorName = activeColor.name
 
-      // Update widget properties dynamically
       if (this.widgets.helloBtn) {
         this.widgets.helloBtn.setProperty(hmUI.prop.COLOR, activeColor.int)
       }
       if (this.widgets.counterLabel) {
         this.widgets.counterLabel.setProperty(
           hmUI.prop.TEXT,
-          `Taps: ${this.state.clickCount} · Color: ${activeColor.name}`
+          `Taps: ${this.state.clickCount} · ${activeColor.name}`
         )
       }
 
-      console.log(`[ZeppHello] Tapped! New color: ${activeColor.name} (${this.state.clickCount} taps)`)
-
-      // Sync with globalApp data for widgets
       try {
         const app = typeof getApp === 'function' ? getApp() : null
         if (app && app._options && app._options.globalData) {
@@ -200,7 +194,7 @@ Page(
 
     fetchCompanionSettings() {
       if (this.widgets.counterLabel) {
-        this.widgets.counterLabel.setProperty(hmUI.prop.TEXT, 'Syncing with companion...')
+        this.widgets.counterLabel.setProperty(hmUI.prop.TEXT, 'Syncing...')
       }
 
       try {
@@ -223,13 +217,13 @@ Page(
             if (this.widgets.counterLabel) {
               this.widgets.counterLabel.setProperty(
                 hmUI.prop.TEXT,
-                `Synced! Color: ${this.state.colorName}`
+                `Synced · ${this.state.colorName}`
               )
             }
           }
         }).catch(() => {
           if (this.widgets.counterLabel) {
-            this.widgets.counterLabel.setProperty(hmUI.prop.TEXT, 'Companion disconnected')
+            this.widgets.counterLabel.setProperty(hmUI.prop.TEXT, 'Disconnected')
           }
         })
       } catch (e) {

@@ -4,58 +4,40 @@ import {
   Sliders,
   QrCode,
   BookOpen,
-  Zap,
-  Check,
   Copy,
-  RefreshCw,
-  Sparkles,
-  ExternalLink,
+  Check,
   Download,
-  Globe,
-  Github,
-  CheckCircle2,
-  Info
+  ExternalLink
 } from 'lucide-react';
 import QRCode from 'qrcode';
 
 const COLORS = [
-  { name: 'Emerald', hex: '#10b981', int: 0x10b981 },
-  { name: 'Cyan', hex: '#06b6d4', int: 0x06b6d4 },
-  { name: 'Amber', hex: '#f59e0b', int: 0xf59e0b },
-  { name: 'Pink', hex: '#ec4899', int: 0xec4899 },
-  { name: 'Violet', hex: '#8b5cf6', int: 0x8b5cf6 },
-  { name: 'Sky', hex: '#38bdf8', int: 0x38bdf8 }
+  { name: 'Purple', hex: '#a855f7' },
+  { name: 'Emerald', hex: '#10b981' },
+  { name: 'Cyan', hex: '#06b6d4' },
+  { name: 'Amber', hex: '#f59e0b' },
+  { name: 'Rose', hex: '#f43f5e' },
+  { name: 'Sky', hex: '#38bdf8' }
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'builder' | 'emulator' | 'settings' | 'docs'>('builder');
-  const [watchView, setWatchView] = useState<'page' | 'app-widget' | 'secondary-widget'>('page');
-  const [currentColorHex, setCurrentColorHex] = useState('#10b981');
-  const [defaultColorHex, setDefaultColorHex] = useState('#10b981');
+  const [activeTab, setActiveTab] = useState<'tester' | 'settings' | 'install' | 'guide'>('tester');
+  const [watchView, setWatchView] = useState<'page' | 'widget' | 'glance'>('page');
+  const [currentColorHex, setCurrentColorHex] = useState('#a855f7');
+  const [defaultColorHex, setDefaultColorHex] = useState('#a855f7');
   const [clickCount, setClickCount] = useState(0);
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
-  const [isBuilding, setIsBuilding] = useState(false);
-  const [buildSuccess, setBuildSuccess] = useState(false);
-
-  // QR Code Source Configuration
-  const [qrSource, setQrSource] = useState<'github' | 'live' | 'custom'>('github');
-  // NOTE: If changing or renaming your GitHub repository, update this value:
+  const [installSource, setInstallSource] = useState<'github' | 'live'>('github');
   const [githubRepo, setGithubRepo] = useState('petew1987/ZeppHello');
-  const [packageFormat, setPackageFormat] = useState<'zpk' | 'zab'>('zpk');
-  const [customUrl, setCustomUrl] = useState('');
 
-  // Compute active download URL and scannable zpkd1:// URI
   const getActiveDownloadUrl = () => {
-    if (qrSource === 'github') {
+    if (installSource === 'github') {
       const cleanRepo = githubRepo.trim() || 'petew1987/ZeppHello';
-      return `https://github.com/${cleanRepo}/releases/latest/download/zepphello.${packageFormat}`;
+      return `https://github.com/${cleanRepo}/releases/latest/download/zepphello.zpk`;
     }
-    if (qrSource === 'live') {
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://example.com';
-      return `${origin}/zepphello.${packageFormat}`;
-    }
-    return customUrl.trim() || 'https://example.com/zepphello.zpk';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://example.com';
+    return `${origin}/zepphello.zpk`;
   };
 
   const getActiveZpkd1Url = () => {
@@ -63,19 +45,17 @@ export default function App() {
     return `zpkd1://${rawUrl.replace(/^https?:\/\//, '')}`;
   };
 
-  // Regenerate QR code whenever target URL changes
   useEffect(() => {
-    const zpkd1Uri = getActiveZpkd1Url();
-    QRCode.toDataURL(zpkd1Uri, {
-      width: 280,
-      margin: 2,
+    const uri = getActiveZpkd1Url();
+    QRCode.toDataURL(uri, {
+      width: 260,
+      margin: 1,
       color: { dark: '#000000', light: '#ffffff' }
     })
       .then((url: string) => setQrDataUrl(url))
-      .catch((err: unknown) => console.error('QR generation error:', err));
-  }, [qrSource, githubRepo, packageFormat, customUrl]);
+      .catch((err: unknown) => console.error('QR error:', err));
+  }, [installSource, githubRepo]);
 
-  // When clicking the watch face, cycle through colors and increment taps
   const handleWatchClick = () => {
     setClickCount(prev => prev + 1);
     const currentIndex = COLORS.findIndex(c => c.hex.toLowerCase() === currentColorHex.toLowerCase());
@@ -83,19 +63,9 @@ export default function App() {
     setCurrentColorHex(COLORS[nextIndex].hex);
   };
 
-  // Change default color in settings
   const handleDefaultColorSelect = (hex: string) => {
     setDefaultColorHex(hex);
     setCurrentColorHex(hex);
-  };
-
-  const triggerBuild = () => {
-    setIsBuilding(true);
-    setBuildSuccess(false);
-    setTimeout(() => {
-      setIsBuilding(false);
-      setBuildSuccess(true);
-    }, 800);
   };
 
   const copyScheme = () => {
@@ -107,633 +77,433 @@ export default function App() {
   const activeColorObj = COLORS.find(c => c.hex.toLowerCase() === currentColorHex.toLowerCase()) || COLORS[0];
 
   return (
-    <div className="min-h-screen bg-black text-slate-100 font-sans antialiased selection:bg-teal-500/30 selection:text-teal-200">
-      {/* Top Header with responsive wrapping */}
-      <header className="border-b border-slate-900 bg-black/95 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-          {/* Logo & Company */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 shrink-0">
-              <Watch className="w-5 h-5" />
+    <div className="min-h-screen bg-black text-zinc-100 font-sans antialiased selection:bg-purple-600/30 selection:text-purple-300 flex flex-col justify-between">
+      {/* Top Header */}
+      <header className="border-b border-zinc-900 bg-black/80 backdrop-blur sticky top-0 z-40">
+        <div className="max-w-xl mx-auto px-5 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <Watch className="w-4 h-4" />
             </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-base font-bold text-white tracking-tight">ZeppHello</span>
-                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400">
-                  Stealth Apps Template
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 truncate">petew1987/ZeppHello · Amazfit Builder & Tester</p>
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-sm font-semibold tracking-tight text-white">ZeppHello</h1>
+              <span className="text-xs text-zinc-400">by Stealth Apps</span>
             </div>
           </div>
 
-          {/* Navigation Menus with Flex-Wrap */}
-          <nav className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-            <button
-              onClick={() => setActiveTab('builder')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                activeTab === 'builder'
-                  ? 'bg-teal-600 text-white shadow-sm'
-                  : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
-            >
-              <QrCode className="w-3.5 h-3.5" /> QR Installer
-            </button>
-
-            <button
-              onClick={() => setActiveTab('emulator')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                activeTab === 'emulator'
-                  ? 'bg-teal-600 text-white shadow-sm'
-                  : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
-            >
-              <Watch className="w-3.5 h-3.5" /> Watch Tester
-            </button>
-
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                activeTab === 'settings'
-                  ? 'bg-teal-600 text-white shadow-sm'
-                  : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
-            >
-              <Sliders className="w-3.5 h-3.5" /> Settings
-            </button>
-
-            <button
-              onClick={() => setActiveTab('docs')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
-                activeTab === 'docs'
-                  ? 'bg-teal-600 text-white shadow-sm'
-                  : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-              }`}
-            >
-              <BookOpen className="w-3.5 h-3.5" /> Code Guide
-            </button>
-          </nav>
+          <div className="text-xs text-zinc-400 font-mono">Amazfit Active 3</div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
-        {/* TAB 1: BUILDER & QR CODE INSTALLER */}
-        {activeTab === 'builder' && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* Main Installer Card */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-slate-950 border border-slate-900 space-y-6">
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <QrCode className="w-5 h-5 text-teal-400" /> Zepp App Developer Mode Installer
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Scan this QR code using the Developer Mode scanner in the Zepp App to wirelessly flash the app to your Amazfit watch.
-                </p>
-              </div>
+      {/* Main Content Area - Mobile-First Layout */}
+      <main className="flex-1 max-w-xl w-full mx-auto px-5 py-6 pb-28">
+        {/* TAB 1: WATCH TESTER */}
+        {activeTab === 'tester' && (
+          <div className="space-y-6">
+            {/* View Switcher Bar */}
+            <div className="flex border-b border-zinc-900 pb-2 gap-6 text-xs">
+              <button
+                onClick={() => setWatchView('page')}
+                className={`pb-1 font-medium transition-colors ${
+                  watchView === 'page'
+                    ? 'text-purple-400 border-b-2 border-purple-500 -mb-[9px]'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Watch Face
+              </button>
+              <button
+                onClick={() => setWatchView('widget')}
+                className={`pb-1 font-medium transition-colors ${
+                  watchView === 'widget'
+                    ? 'text-purple-400 border-b-2 border-purple-500 -mb-[9px]'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Shortcut Card
+              </button>
+              <button
+                onClick={() => setWatchView('glance')}
+                className={`pb-1 font-medium transition-colors ${
+                  watchView === 'glance'
+                    ? 'text-purple-400 border-b-2 border-purple-500 -mb-[9px]'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Glance View
+              </button>
+            </div>
 
-              {/* Source Selector Tabs */}
-              <div className="space-y-3">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
-                  Package Download Source:
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <button
-                    onClick={() => setQrSource('github')}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      qrSource === 'github'
-                        ? 'bg-teal-950/40 border-teal-500 text-white shadow-sm'
-                        : 'bg-black border-slate-900 text-slate-400 hover:border-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 font-semibold text-xs text-teal-300">
-                      <Github className="w-3.5 h-3.5" /> GitHub Releases
+            {/* Circular AMOLED Watch Frame */}
+            <div className="flex justify-center py-4">
+              <div className="relative p-3.5 sm:p-5 rounded-full bg-gradient-to-b from-zinc-900 to-black border-2 border-zinc-800 shadow-2xl shadow-purple-950/20">
+                <div
+                  onClick={handleWatchClick}
+                  className="w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] rounded-full bg-black border border-zinc-900 relative overflow-hidden flex flex-col items-center justify-center p-6 text-center select-none cursor-pointer group"
+                >
+                  {/* Subtle boundary guide */}
+                  <div className="absolute inset-2.5 rounded-full border border-zinc-900/80 pointer-events-none" />
+
+                  {/* VIEW 1: Main Watch App */}
+                  {watchView === 'page' && (
+                    <div className="flex flex-col items-center justify-center w-full h-full">
+                      <span className="text-[11px] tracking-wider text-zinc-400 uppercase font-medium mb-1">
+                        Stealth Apps
+                      </span>
+
+                      <div
+                        className="text-3xl sm:text-4xl font-bold tracking-tight transition-all duration-200 group-hover:scale-105 my-2"
+                        style={{ color: currentColorHex }}
+                      >
+                        Hello!
+                      </div>
+
+                      <div className="text-xs text-zinc-400 font-medium">
+                        {clickCount} {clickCount === 1 ? 'tap' : 'taps'} · {activeColorObj.name}
+                      </div>
+
+                      <div className="mt-5 text-[11px] text-purple-400 font-medium group-hover:text-purple-300 transition-colors">
+                        Tap watch to cycle color
+                      </div>
                     </div>
-                    <div className="text-[11px] text-slate-400 mt-1">
-                      Direct release package from petew1987/ZeppHello.
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setQrSource('live')}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      qrSource === 'live'
-                        ? 'bg-teal-950/40 border-teal-500 text-white shadow-sm'
-                        : 'bg-black border-slate-900 text-slate-400 hover:border-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 font-semibold text-xs text-teal-300">
-                      <Globe className="w-3.5 h-3.5" /> Live Web Server
-                    </div>
-                    <div className="text-[11px] text-slate-400 mt-1">
-                      Instant testing hosted directly on this dev server.
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setQrSource('custom')}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      qrSource === 'custom'
-                        ? 'bg-teal-950/40 border-teal-500 text-white shadow-sm'
-                        : 'bg-black border-slate-900 text-slate-400 hover:border-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 font-semibold text-xs text-teal-300">
-                      <ExternalLink className="w-3.5 h-3.5" /> Custom URL
-                    </div>
-                    <div className="text-[11px] text-slate-400 mt-1">
-                      Provide any direct HTTPS link (S3, R2, Dropbox dl=1).
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Source-specific Configuration Inputs */}
-              {qrSource === 'github' && (
-                <div className="p-4 rounded-xl bg-black border border-slate-900 space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <label className="text-xs font-semibold text-slate-300">
-                      GitHub Repository (owner/repo):
-                    </label>
-                    <span className="text-[11px] text-slate-400 font-mono">
-                      https://github.com/{githubRepo}
-                    </span>
-                  </div>
-                  <input
-                    type="text"
-                    value={githubRepo}
-                    onChange={(e) => setGithubRepo(e.target.value)}
-                    placeholder="petew1987/ZeppHello"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
-                  />
-                  <div className="flex items-start gap-2 text-[11px] text-slate-400 leading-relaxed pt-1">
-                    <Info className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Important note:</strong> If you change or rename your repository in GitHub, you must update this repository name here and in <code>scripts/generate-qr.js</code>.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {qrSource === 'custom' && (
-                <div className="p-4 rounded-xl bg-black border border-slate-900 space-y-3">
-                  <label className="text-xs font-semibold text-slate-300 block">
-                    Direct Download URL (pointing directly to .zpk or .zab file):
-                  </label>
-                  <input
-                    type="text"
-                    value={customUrl}
-                    onChange={(e) => setCustomUrl(e.target.value)}
-                    placeholder="https://example.com/downloads/zepphello.zpk"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-teal-500 font-mono"
-                  />
-                </div>
-              )}
-
-              {/* Package Format Choice */}
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs text-slate-400 font-medium">Target Package:</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPackageFormat('zpk')}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-                      packageFormat === 'zpk'
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-black text-slate-400 border border-slate-800'
-                    }`}
-                  >
-                    .zpk (Recommended for Amazfit Active 3)
-                  </button>
-                  <button
-                    onClick={() => setPackageFormat('zab')}
-                    className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-                      packageFormat === 'zab'
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-black text-slate-400 border border-slate-800'
-                    }`}
-                  >
-                    .zab (Multi-device archive)
-                  </button>
-                </div>
-              </div>
-
-              {/* QR Display + Instructions */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-4 sm:p-5 rounded-xl bg-black border border-slate-900">
-                {/* QR Code Container */}
-                <div className="md:col-span-5 flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow shrink-0">
-                  {qrDataUrl ? (
-                    <img src={qrDataUrl} alt="Zepp Developer Mode QR Code" className="w-48 h-48 sm:w-56 sm:h-56" />
-                  ) : (
-                    <div className="w-48 h-48 flex items-center justify-center text-slate-400 text-xs">Generating QR...</div>
                   )}
-                  <span className="text-[10px] text-slate-700 font-mono font-semibold mt-2 text-center">
-                    Protocol: zpkd1:// ({packageFormat.toUpperCase()} package)
+
+                  {/* VIEW 2: Shortcut Card Widget */}
+                  {watchView === 'widget' && (
+                    <div className="w-full flex flex-col items-start justify-center px-4 text-left">
+                      <span className="text-[10px] tracking-wider uppercase text-purple-400 font-semibold mb-1">
+                        Shortcut Card
+                      </span>
+                      <div className="text-2xl font-bold tracking-tight" style={{ color: currentColorHex }}>
+                        Hello!
+                      </div>
+                      <span className="text-xs text-zinc-400 mt-1">
+                        {clickCount} taps · Tap to open
+                      </span>
+                    </div>
+                  )}
+
+                  {/* VIEW 3: Glance Widget */}
+                  {watchView === 'glance' && (
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="text-[10px] uppercase text-zinc-400 mb-1">Glance</span>
+                      <div className="text-3xl font-bold tracking-tight" style={{ color: currentColorHex }}>
+                        Hello!
+                      </div>
+                      <span className="text-xs text-zinc-400 mt-1">{clickCount} taps</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick State Summary */}
+            <div className="flex items-center justify-between py-3 border-t border-b border-zinc-900 text-xs">
+              <span className="text-zinc-400">Current Watch Color</span>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: currentColorHex }} />
+                <span className="font-medium text-white">{activeColorObj.name}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: APP SETTINGS */}
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-base font-semibold text-white">Default Text Color</h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                Choose the initial color for the Hello text. In Zepp OS, this is stored on the phone and synced to the watch.
+              </p>
+            </div>
+
+            {/* Flat Color Picker List */}
+            <div className="divide-y divide-zinc-900 border-t border-b border-zinc-900">
+              {COLORS.map(c => {
+                const isSelected = defaultColorHex.toLowerCase() === c.hex.toLowerCase();
+                return (
+                  <button
+                    key={c.hex}
+                    onClick={() => handleDefaultColorSelect(c.hex)}
+                    className="w-full py-3.5 flex items-center justify-between text-left transition-colors hover:bg-zinc-950/60"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-5 h-5 rounded-full shrink-0" style={{ backgroundColor: c.hex }} />
+                      <span className={`text-sm ${isSelected ? 'text-white font-medium' : 'text-zinc-400'}`}>
+                        {c.name}
+                      </span>
+                    </div>
+
+                    {isSelected && <span className="text-xs text-purple-400 font-medium">Selected</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setActiveTab('tester')}
+                className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-all shadow-md shadow-purple-950/30"
+              >
+                Apply to Watch
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: INSTALL VIA QR CODE */}
+        {activeTab === 'install' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-base font-semibold text-white">Install on Amazfit Watch</h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                Scan with the Developer Mode QR scanner in the smartphone Zepp App.
+              </p>
+            </div>
+
+            {/* Source Segment Control */}
+            <div className="grid grid-cols-2 p-1 rounded-xl bg-zinc-950 border border-zinc-900 text-xs font-medium">
+              <button
+                onClick={() => setInstallSource('github')}
+                className={`py-2 rounded-lg transition-all ${
+                  installSource === 'github'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                GitHub Release
+              </button>
+              <button
+                onClick={() => setInstallSource('live')}
+                className={`py-2 rounded-lg transition-all ${
+                  installSource === 'live'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Live Web Server
+              </button>
+            </div>
+
+            {/* QR Code Presentation */}
+            <div className="flex flex-col items-center justify-center py-4">
+              <div className="p-4 bg-white rounded-2xl shadow-xl">
+                {qrDataUrl ? (
+                  <img src={qrDataUrl} alt="Zepp OS QR Installer" className="w-52 h-52 sm:w-60 sm:h-60" />
+                ) : (
+                  <div className="w-52 h-52 flex items-center justify-center text-xs text-zinc-400">
+                    Generating QR code...
+                  </div>
+                )}
+              </div>
+              <span className="text-[11px] text-zinc-400 mt-2 font-mono">
+                {installSource === 'github' ? 'petew1987/ZeppHello release package' : 'Live server direct package'}
+              </span>
+            </div>
+
+            {/* Numbered Steps */}
+            <div className="space-y-3 pt-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                Installation Steps
+              </h3>
+              <div className="divide-y divide-zinc-900 border-t border-b border-zinc-900 text-xs">
+                <div className="py-2.5 flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-zinc-900 text-purple-400 font-bold flex items-center justify-center shrink-0 text-[11px]">
+                    1
+                  </span>
+                  <span className="text-zinc-300">
+                    Open <strong>Zepp App</strong> &rarr; Profile &rarr; Settings &rarr; About &rarr; tap Zepp logo 7 times.
                   </span>
                 </div>
-
-                {/* Instructions & Links */}
-                <div className="md:col-span-7 space-y-3.5">
-                  <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
-                    How to Scan and Install:
-                  </h4>
-                  <ol className="text-xs text-slate-400 space-y-2 list-decimal list-inside leading-relaxed">
-                    <li>Open <strong>Zepp App</strong> on your phone.</li>
-                    <li>Go to <strong>Profile &rarr; Settings &rarr; About</strong> and tap the Zepp logo <strong>7 times</strong> until Developer Mode is activated.</li>
-                    <li>Return to <strong>Profile &rarr; [Amazfit Device] &rarr; Developer Mode</strong>.</li>
-                    <li>Tap the <strong>QR scanner icon</strong> (top right) and point your camera at the QR code.</li>
-                  </ol>
-
-                  {/* Actions */}
-                  <div className="pt-2 flex flex-wrap gap-2">
-                    <a
-                      href={getActiveDownloadUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 rounded-lg bg-teal-950 border border-teal-800 text-teal-300 text-xs font-medium hover:bg-teal-900 transition-all flex items-center gap-1.5"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" /> Test Link in Browser
-                    </a>
-
-                    <button
-                      onClick={copyScheme}
-                      className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-800 transition-all flex items-center gap-1.5"
-                    >
-                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
-                      {copied ? 'Copied zpkd1://' : 'Copy zpkd1:// URL'}
-                    </button>
-                  </div>
-
-                  {/* Active Download URL display */}
-                  <div className="text-[10px] text-slate-500 font-mono break-all pt-1">
-                    Direct URL: {getActiveDownloadUrl()}
-                  </div>
+                <div className="py-2.5 flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-zinc-900 text-purple-400 font-bold flex items-center justify-center shrink-0 text-[11px]">
+                    2
+                  </span>
+                  <span className="text-zinc-300">
+                    Return to <strong>Profile &rarr; Amazfit Active 3 &rarr; Developer Mode</strong>.
+                  </span>
+                </div>
+                <div className="py-2.5 flex items-start gap-3">
+                  <span className="w-5 h-5 rounded-full bg-zinc-900 text-purple-400 font-bold flex items-center justify-center shrink-0 text-[11px]">
+                    3
+                  </span>
+                  <span className="text-zinc-300">
+                    Tap the <strong>QR scanner icon</strong> in top right and scan the code above.
+                  </span>
                 </div>
               </div>
+            </div>
 
-              {/* GitHub Repository Setup Requirements Guide */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-900 space-y-3">
-                <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                  <Github className="w-4 h-4 text-teal-400" /> Essential GitHub Repository Settings
-                </span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-400">
-                  <div className="p-3 rounded-lg bg-black border border-slate-900 space-y-1">
-                    <span className="font-semibold text-slate-300 block">1. Repository Visibility: Must Be Public</span>
-                    <p className="leading-relaxed">
-                      The Zepp App does not have your GitHub credentials. If your repository is private, GitHub blocks unauthenticated downloads. Set repository to <strong>Public</strong> in <em>Settings &rarr; Danger Zone &rarr; Change repository visibility</em>.
-                    </p>
-                  </div>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <button
+                onClick={copyScheme}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 font-medium transition-all flex items-center justify-center gap-2"
+              >
+                {copied ? <Check className="w-4 h-4 text-purple-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
+                {copied ? 'Link Copied' : 'Copy Install Link'}
+              </button>
 
-                  <div className="p-3 rounded-lg bg-black border border-slate-900 space-y-1">
-                    <span className="font-semibold text-slate-300 block">2. Actions Workflow Permissions</span>
-                    <p className="leading-relaxed">
-                      In your repo, go to <em>Settings &rarr; Actions &rarr; General &rarr; Workflow permissions</em> and select <strong>"Read and write permissions"</strong> so the build workflow can publish release files.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <a
+                href={getActiveDownloadUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2.5 px-4 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 font-medium transition-all flex items-center justify-center gap-2"
+              >
+                <ExternalLink className="w-4 h-4 text-zinc-400" />
+                Test Link
+              </a>
 
-              {/* Direct Package Downloads */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-900 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <span className="text-xs font-semibold text-slate-300 block">Download Package Files:</span>
-                  <span className="text-[11px] text-slate-400">Save to your device or transfer via Zeus CLI</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <a
-                    href="/zepphello.zpk"
-                    download="zepphello.zpk"
-                    className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-teal-300 font-medium transition-all flex items-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Download zepphello.zpk
-                  </a>
-                  <a
-                    href="/zepphello.zab"
-                    download="zepphello.zab"
-                    className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 font-medium transition-all flex items-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Download zepphello.zab
-                  </a>
-                </div>
-              </div>
+              <a
+                href="/zepphello.zpk"
+                download="zepphello.zpk"
+                className="py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs text-white font-medium transition-all flex items-center justify-center gap-2 shadow-md shadow-purple-950/20"
+              >
+                <Download className="w-4 h-4" />
+                Download .zpk
+              </a>
             </div>
           </div>
         )}
 
-        {/* TAB 2: WATCH EMULATOR & INTERACTIVE TESTER */}
-        {activeTab === 'emulator' && (
+        {/* TAB 4: GUIDE & REPOSITORY DOCUMENTATION */}
+        {activeTab === 'guide' && (
           <div className="space-y-6">
-            {/* View Selector for Watch Screens */}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-950 border border-slate-900">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium">Select Watch View:</span>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => setWatchView('page')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                      watchView === 'page'
-                        ? 'bg-teal-900/60 text-teal-300 border border-teal-700/50'
-                        : 'bg-black text-slate-400 hover:text-slate-300 border border-slate-800'
-                    }`}
-                  >
-                    Main Watch App (page/index.js)
-                  </button>
-                  <button
-                    onClick={() => setWatchView('app-widget')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                      watchView === 'app-widget'
-                        ? 'bg-teal-900/60 text-teal-300 border border-teal-700/50'
-                        : 'bg-black text-slate-400 hover:text-slate-300 border border-slate-800'
-                    }`}
-                  >
-                    Shortcut Card (app-widget/index.js)
-                  </button>
-                  <button
-                    onClick={() => setWatchView('secondary-widget')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                      watchView === 'secondary-widget'
-                        ? 'bg-teal-900/60 text-teal-300 border border-teal-700/50'
-                        : 'bg-black text-slate-400 hover:text-slate-300 border border-slate-800'
-                    }`}
-                  >
-                    Secondary Widget (secondary-widget/index.js)
-                  </button>
-                </div>
-              </div>
+            <div>
+              <h2 className="text-base font-semibold text-white">Template Guide</h2>
+              <p className="text-xs text-zinc-400 mt-1">
+                Everything you need to configure GitHub and build new apps from this template.
+              </p>
+            </div>
 
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Amazfit Active 3 (466x466)</span>
+            {/* GitHub Setup Section */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-purple-400">
+                GitHub Repository Requirements
+              </h3>
+
+              <div className="divide-y divide-zinc-900 border-t border-b border-zinc-900 text-xs">
+                <div className="py-3 space-y-1">
+                  <div className="font-medium text-white">1. Repository Visibility: Must Be Public</div>
+                  <p className="text-zinc-400 leading-relaxed">
+                    The Zepp App scanner downloads packages without authentication. In GitHub, go to <em>Settings &rarr; Danger Zone &rarr; Change repository visibility</em> and set to <strong>Public</strong>.
+                  </p>
+                </div>
+
+                <div className="py-3 space-y-1">
+                  <div className="font-medium text-white">2. Actions Workflow Permissions</div>
+                  <p className="text-zinc-400 leading-relaxed">
+                    In your repository, go to <em>Settings &rarr; Actions &rarr; General &rarr; Workflow permissions</em> and select <strong>"Read and write permissions"</strong> so releases are created on push.
+                  </p>
+                </div>
+
+                <div className="py-3 space-y-1">
+                  <div className="font-medium text-white">3. Repository Identifier</div>
+                  <p className="text-zinc-400 leading-relaxed">
+                    Configured for <strong>https://github.com/petew1987/ZeppHello/</strong>. If you change or fork this repository, remember to update the identifier in <code>scripts/generate-qr.js</code>.
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Emulator + Details Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              {/* Left Column: Interactive Watch Simulator */}
-              <div className="lg:col-span-6 flex justify-center order-2 lg:order-1">
-                <div className="relative p-4 sm:p-6 rounded-[52px] bg-gradient-to-b from-slate-900 via-black to-slate-950 border-4 border-slate-800 shadow-2xl">
-                  {/* Bezel */}
-                  <div className="relative w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] rounded-full bg-black border border-slate-800 overflow-hidden flex flex-col items-center justify-center p-6 text-center select-none shadow-inner">
-                    {/* VIEW 1: Main Watch App */}
-                    {watchView === 'page' && (
-                      <div
-                        onClick={handleWatchClick}
-                        className="w-full h-full flex flex-col items-center justify-center cursor-pointer group"
-                      >
-                        {/* Outer Arc */}
-                        <div className="absolute inset-3 rounded-full border-2 border-slate-800/80 pointer-events-none"></div>
+            {/* Architecture Section */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-purple-400">
+                Codebase Overview
+              </h3>
 
-                        <span className="text-[11px] tracking-widest text-slate-400 font-semibold mb-1">
-                          STEALTH APPS · ZEPP OS
-                        </span>
-
-                        <div
-                          className="text-3xl sm:text-4xl font-extrabold tracking-tight transition-all duration-200 group-hover:scale-105 my-2"
-                          style={{ color: currentColorHex }}
-                        >
-                          Hello, Zepp OS!
-                        </div>
-
-                        <div className="text-xs text-slate-400 font-medium">
-                          Taps: {clickCount} · {activeColorObj.name}
-                        </div>
-
-                        <div className="mt-4 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] text-teal-400 font-medium group-hover:border-teal-500/40 transition-colors">
-                          Tap screen to cycle color ✨
-                        </div>
-
-                        <div className="absolute bottom-5 text-[10px] text-slate-400">
-                          page/index.js · Round 466x466
-                        </div>
-                      </div>
-                    )}
-
-                    {/* VIEW 2: Shortcut Card Widget */}
-                    {watchView === 'app-widget' && (
-                      <div
-                        onClick={handleWatchClick}
-                        className="w-full h-full flex flex-col items-center justify-center p-4 cursor-pointer group"
-                      >
-                        <div className="w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 text-left space-y-2 group-hover:border-teal-500/40 transition-all">
-                          <div className="text-[10px] font-semibold text-sky-400 tracking-wider uppercase">
-                            Shortcut Card Widget
-                          </div>
-                          <div className="text-2xl font-bold" style={{ color: currentColorHex }}>
-                            Hello, Zepp OS!
-                          </div>
-                          <div className="text-xs text-slate-400">
-                            Stealth Apps · Taps: {clickCount}
-                          </div>
-                        </div>
-                        <div className="mt-4 text-[11px] text-slate-400">
-                          Amazfit Shortcut Screen (Swipe Right)
-                        </div>
-                      </div>
-                    )}
-
-                    {/* VIEW 3: Secondary Widget */}
-                    {watchView === 'secondary-widget' && (
-                      <div
-                        onClick={handleWatchClick}
-                        className="w-full h-full flex flex-col items-center justify-center cursor-pointer group"
-                      >
-                        <div className="absolute inset-3 rounded-full border-2 border-slate-800 pointer-events-none"></div>
-                        <div className="text-xs text-sky-400 font-medium mb-1">STEALTH APPS GLANCE</div>
-                        <div className="text-3xl font-black my-1" style={{ color: currentColorHex }}>
-                          Hello, Zepp OS!
-                        </div>
-                        <div className="text-xs text-slate-400 mt-1">
-                          Total Taps: {clickCount}
-                        </div>
-                        <div className="mt-4 text-[10px] text-slate-400">
-                          Swipe-Left Widget (secondary-widget)
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Interaction Controls & Metrics */}
-              <div className="lg:col-span-6 space-y-5 order-1 lg:order-2">
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-medium">
-                    <Sparkles className="w-3 h-3" /> Live Event & State Tester
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-2">
-                    Click watch to test interactive color shifts.
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-400 mt-2 leading-relaxed">
-                    This template includes the complete Zepp OS architecture: watch UI, companion service, shortcut widgets, and mobile settings. Tapping the watch updates reactive state and cycles through vibrant AMOLED colors.
-                  </p>
+              <div className="divide-y divide-zinc-900 border-t border-b border-zinc-900 text-xs">
+                <div className="py-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                  <span className="font-mono text-white">page/index.js</span>
+                  <span className="text-zinc-400">Watch face interface and touch interactions</span>
                 </div>
 
-                {/* Metrics Cards with Flex Wrapping */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-900">
-                    <span className="text-[11px] text-slate-400 uppercase font-semibold">Active Color</span>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="w-3.5 h-3.5 rounded-full shrink-0" style={{ backgroundColor: currentColorHex }}></span>
-                      <span className="text-sm font-semibold text-slate-200">{activeColorObj.name}</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-900">
-                    <span className="text-[11px] text-slate-400 uppercase font-semibold">Interaction Taps</span>
-                    <div className="text-lg font-bold text-teal-400 mt-1">{clickCount} Taps</div>
-                  </div>
+                <div className="py-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                  <span className="font-mono text-white">app-side/index.js</span>
+                  <span className="text-zinc-400">Phone companion service with full network fetch</span>
                 </div>
 
-                {/* Action Shortcuts */}
-                <div className="flex flex-wrap gap-2.5 pt-1">
-                  <button
-                    onClick={() => setActiveTab('settings')}
-                    className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-medium text-xs transition-all flex items-center gap-1.5 shadow"
-                  >
-                    <Sliders className="w-3.5 h-3.5" /> Customize Default Color
-                  </button>
+                <div className="py-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                  <span className="font-mono text-white">setting/index.js</span>
+                  <span className="text-zinc-400">Zepp App phone settings page with settingsStorage</span>
+                </div>
 
-                  <button
-                    onClick={() => setActiveTab('builder')}
-                    className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-medium text-xs transition-all border border-slate-800 flex items-center gap-1.5"
-                  >
-                    <QrCode className="w-3.5 h-3.5" /> Open QR Installer
-                  </button>
+                <div className="py-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                  <span className="font-mono text-white">app-widget/index.js</span>
+                  <span className="text-zinc-400">Shortcut screen card component</span>
+                </div>
+
+                <div className="py-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                  <span className="font-mono text-white">secondary-widget/index.js</span>
+                  <span className="text-zinc-400">Swipe-left glance widget</span>
+                </div>
+
+                <div className="py-3 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                  <span className="font-mono text-white">app.json</span>
+                  <span className="text-zinc-400">Manifest declaring permissions and 466x466 resolution</span>
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* TAB 3: SETTINGS (Zepp App Smartphone UI Simulator) */}
-        {activeTab === 'settings' && (
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="p-5 sm:p-6 rounded-2xl bg-slate-950 border border-slate-900 space-y-5">
-              <div>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                    <Sliders className="w-4 h-4 text-teal-400" /> Zepp App Settings Customizer
-                  </h3>
-                  <span className="text-[11px] font-mono text-slate-400">setting/index.js</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-1">
-                  Simulates the smartphone configuration screen. In Zepp OS, settings are saved in <code>settingsStorage</code> and synchronized to the watch via <code>app-side/index.js</code>.
-                </p>
-              </div>
-
-              {/* Color Selection Palette */}
-              <div className="space-y-3">
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
-                  Select Default Hello Color
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {COLORS.map(c => {
-                    const isSelected = defaultColorHex.toLowerCase() === c.hex.toLowerCase();
-                    return (
-                      <button
-                        key={c.hex}
-                        onClick={() => handleDefaultColorSelect(c.hex)}
-                        className={`p-3 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-teal-950/40 border-teal-500 text-white'
-                            : 'bg-black border-slate-900 text-slate-400 hover:border-slate-800'
-                        }`}
-                      >
-                        <span className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: c.hex }}></span>
-                        <div className="min-w-0">
-                          <div className="text-xs font-medium text-slate-200">{c.name}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">{c.hex}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Settings Storage Explainer */}
-              <div className="p-3.5 rounded-xl bg-black border border-slate-900 text-xs text-slate-400 space-y-1.5">
-                <span className="font-semibold text-slate-300 block">How settings synchronization works:</span>
-                <p className="leading-relaxed">
-                  When a user picks a color on their smartphone, <code>props.settingsStorage.setItem('textColor', value)</code> persists it. The companion service (<code>app-side/index.js</code>) reads it and responds to watch IPC queries.
-                </p>
-              </div>
-
-              <div className="flex justify-end pt-2">
-                <button
-                  onClick={() => setActiveTab('emulator')}
-                  className="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold transition-all shadow"
-                >
-                  Apply & Return to Watch Face
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: TEMPLATE CODEBASE GUIDE */}
-        {activeTab === 'docs' && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="p-5 sm:p-6 rounded-2xl bg-slate-950 border border-slate-900 space-y-5">
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-teal-400" /> Zepp OS Template Architecture Notes
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Keep this guide handy when building your next Zepp OS app using this template by Stealth Apps.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                <div className="p-4 rounded-xl bg-black border border-slate-900 space-y-1.5">
-                  <div className="text-xs font-semibold text-teal-400 font-mono">1. /page/index.js (Watch Face UI)</div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Builds the primary watch canvas using <code>hmUI.createWidget()</code> for the 466x466 AMOLED screen. Receives touch events and communicates with companion services via <code>this.request()</code>.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-black border border-slate-900 space-y-1.5">
-                  <div className="text-xs font-semibold text-teal-400 font-mono">2. /app-side/index.js (Companion Service)</div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Background service running on the mobile phone. Provides full fetch network access, performs heavy background tasks, and syncs configurations from <code>settingsStorage</code>.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-black border border-slate-900 space-y-1.5">
-                  <div className="text-xs font-semibold text-teal-400 font-mono">3. /setting/index.js (Phone Settings App)</div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Rendered inside the Zepp App on smartphone. Uses <code>AppSettingsPage</code> and <code>props.settingsStorage</code> so users can customize themes, colors, and options.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-black border border-slate-900 space-y-1.5">
-                  <div className="text-xs font-semibold text-teal-400 font-mono">4. /app-widget/index.js (Shortcut Card)</div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Shortcut Card widget on the Amazfit negative screen (swiping right). Displays quick info and opens the main app on click.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-black border border-slate-900 space-y-1.5">
-                  <div className="text-xs font-semibold text-teal-400 font-mono">5. /secondary-widget/index.js (Glance Widget)</div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Full-circle glanceable widget accessible when swiping left from the watchface. Ideal for fast status checks.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-black border border-slate-900 space-y-1.5">
-                  <div className="text-xs font-semibold text-teal-400 font-mono">6. /app.json & /scripts/generate-qr.js</div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Manifest file specifying target 466x466 resolution and permissions. The QR generator creates <code>zpkd1://</code> QR codes for seamless Zepp App Developer Mode installation.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-teal-950/20 border border-teal-900/40 text-xs text-teal-300 flex items-center justify-between gap-3">
-                <span>Repository: <strong>https://github.com/petew1987/ZeppHello/</strong> (Stealth Apps)</span>
-                <span className="font-mono text-[11px] text-teal-400">Zepp OS v2.x / v3.x Ready</span>
+            {/* Local CLI Command */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-purple-400">
+                Local Testing with Zeus CLI
+              </h3>
+              <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-900 font-mono text-xs text-zinc-300">
+                npm install -g @zeppos/zeus-cli<br />
+                zeus preview
               </div>
             </div>
           </div>
         )}
       </main>
+
+      {/* Mobile-First Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/90 backdrop-blur border-t border-zinc-900">
+        <div className="max-w-xl mx-auto px-4 h-16 grid grid-cols-4 items-center">
+          <button
+            onClick={() => setActiveTab('tester')}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              activeTab === 'tester' ? 'text-purple-400' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Watch className="w-5 h-5" />
+            <span className="text-[10px] font-medium tracking-tight">Watch</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              activeTab === 'settings' ? 'text-purple-400' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Sliders className="w-5 h-5" />
+            <span className="text-[10px] font-medium tracking-tight">Settings</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('install')}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              activeTab === 'install' ? 'text-purple-400' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <QrCode className="w-5 h-5" />
+            <span className="text-[10px] font-medium tracking-tight">Install</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('guide')}
+            className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+              activeTab === 'guide' ? 'text-purple-400' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <BookOpen className="w-5 h-5" />
+            <span className="text-[10px] font-medium tracking-tight">Guide</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
