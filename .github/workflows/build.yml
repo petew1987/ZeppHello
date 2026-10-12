@@ -33,7 +33,6 @@ jobs:
 
       - name: Build Zepp OS Package (.zab and .zpk)
         run: |
-          zeus build || true
           node scripts/build-package.js
           ls -lh dist/
 
