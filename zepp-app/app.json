@@ -1,30 +1,29 @@
 {
   "configVersion": "v3",
   "app": {
-    "appId": 1009876,
-    "appName": "Aurora Tracker",
+    "appId": 1009877,
+    "appName": "ZeppHello",
     "appType": "app",
     "version": {
       "code": 1,
       "name": "1.0.0"
     },
-    "icon": "assets/icon.png",
-    "vender": "AuroraSpaceTech",
-    "description": "Real-time Aurora Borealis viewing probability using NOAA space weather data and Open-Meteo cloud cover for Amazfit Active 3 (round 466x466)."
+    "icon": "icon.png",
+    "vender": "Stealth Apps",
+    "description": "Zepp OS 3.0 / 2.x Mini-App template by Stealth Apps for Amazfit smartwatches featuring interactive Hello message, customizable color settings, companion app side, widgets, and GitHub QR code installer generator for developer mode on Zepp App."
   },
   "permissions": [
-    "device:os.bg_service",
-    "device:os.geolocation"
+    "device:os.bg_service"
   ],
   "runtime": {
     "apiVersion": {
       "compatible": "2.0.0",
       "target": "3.0.0",
-      "minVersion": "2.0.0"
+      "minVersion": "2.0"
     }
   },
   "targets": {
-    "round-466": {
+    "default": {
       "module": {
         "page": {
           "pages": [
@@ -40,7 +39,7 @@
         "app-widget": {
           "widgets": [
             {
-              "name": "Aurora Tracker",
+              "name": "ZeppHello Widget",
               "path": "app-widget/index",
               "icon": "icon.png"
             }
@@ -49,7 +48,7 @@
         "secondary-widget": {
           "widgets": [
             {
-              "name": "Aurora Forecast",
+              "name": "ZeppHello Quick",
               "path": "secondary-widget/index",
               "icon": "icon.png"
             }
@@ -58,8 +57,6 @@
       },
       "platforms": [
         {
-          "name": "active-3",
-          "deviceSource": 260,
           "st": "r",
           "dw": 466
         }
@@ -68,7 +65,7 @@
   },
   "i18n": {
     "en-US": {
-      "appName": "Aurora Tracker"
+      "appName": "ZeppHello"
     }
   },
   "defaultLanguage": "en-US"

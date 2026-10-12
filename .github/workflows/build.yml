@@ -1,7 +1,7 @@
 name: Build & Release Zepp OS App
 
 on:
-  workflow_dispatch: # Allows manual trigger from your browser
+  workflow_dispatch: # Allows manual trigger from browser
   push:
     branches: [ main ]
 
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Aurora Tracker Zepp OS Package
+    name: Build ZeppHello Package by Stealth Apps
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -31,18 +31,17 @@ jobs:
         run: |
           zeus build
           ls -lh dist/
-          # Extract .zpk from .zab archive for direct single-device flashing
           cd dist
           ZAB_FILE=$(ls *.zab 2>/dev/null | head -n 1)
           if [ -n "$ZAB_FILE" ] && [ -f "$ZAB_FILE" ]; then
             echo "Processing $ZAB_FILE..."
-            cp "$ZAB_FILE" aurora-tracker.zab
+            cp "$ZAB_FILE" zepphello.zab
             mkdir -p extracted_zab
             unzip -o "$ZAB_FILE" -d extracted_zab || true
             ZPK_FOUND=$(find extracted_zab -name "*.zpk" | head -n 1)
             if [ -n "$ZPK_FOUND" ]; then
-              cp "$ZPK_FOUND" aurora-tracker.zpk
-              echo "Created aurora-tracker.zpk from $ZPK_FOUND"
+              cp "$ZPK_FOUND" zepphello.zpk
+              echo "Created zepphello.zpk from $ZPK_FOUND"
             fi
           fi
           cd ..
@@ -55,7 +54,7 @@ jobs:
       - name: Upload Build Artifacts (.zab, .zpk, and QR codes)
         uses: actions/upload-artifact@v4
         with:
-          name: zepp-os-aurora-tracker
+          name: zepp-os-zepphello
           path: |
             dist/*.zab
             dist/*.zpk
@@ -66,16 +65,19 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "Aurora Tracker Zepp OS v1.0.0"
+          name: "ZeppHello Template v1.0.0 by Stealth Apps"
           body: |
-            ## 🌌 Aurora Tracker for Amazfit Active 3 (Zepp OS 3.0 / 2.x)
+            ## ⌚ ZeppHello — Zepp OS Template by Stealth Apps
             
-            Install via Zepp App Developer Mode by scanning the QR code in the Action Run Summary or downloading the `.zab` / `.zpk` packages below.
+            Zepp OS 3.0 / 2.x Mini-App template for Amazfit smartwatches (Round 466x466 AMOLED).
+            
+            ### 📱 Install via Zepp App Developer Mode:
+            Scan the QR code shown in the GitHub Actions Run Summary or use the `zpkd1://` link:
+            `zpkd1://${{ github.server_url }}/${{ github.repository }}/releases/latest/download/zepphello.zab`
           files: |
-            dist/aurora-tracker.zab
-            dist/aurora-tracker.zpk
+            dist/zepphello.zab
+            dist/zepphello.zpk
             dist/install-qrcode.png
-            dist/install-qrcode-zpk.png
           draft: false
           prerelease: false
         env:

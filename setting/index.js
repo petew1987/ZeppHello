@@ -1,57 +1,36 @@
 /**
- * Aurora Tracker - Settings App (Runs on Smartphone Zepp App for Android & iOS)
+ * ZeppHello - Settings App (Runs on Smartphone Zepp App for Android & iOS)
  *
- * Responsibilities:
- * 1. Allows user to select active location (Current Watch GPS vs Saved Locations).
- * 2. Allows user to save, edit, and delete custom northern lights viewing locations.
- * 3. Persists configuration in Zepp OS settingsStorage.
- * 4. Communicates automatically with app-side/index.js companion service.
- *
- * Visual Finish:
- * - Professional, aligned, and distributed layout.
- * - ZERO BADGES / ZERO PILLS: Clean typographic lists with radio markers and subtle borders.
+ * TEMPLATE ARCHITECTURE NOTES:
+ * - Rendered in the Zepp smartphone app when configuring the mini-app.
+ * - Uses declarative UI components (View, Text, Select, Button, Toggle, etc.).
+ * - Persists user preferences to settingsStorage, which syncs to watch & companion.
  */
 
-const DEFAULT_PRESET_LOCATIONS = [
-  { id: 'tromso', name: 'Tromsø', country: 'Norway', lat: 69.6492, lon: 18.9553 },
-  { id: 'reykjavik', name: 'Reykjavík', country: 'Iceland', lat: 64.1466, lon: -21.9426 },
-  { id: 'fairbanks', name: 'Fairbanks', country: 'Alaska, USA', lat: 64.8378, lon: -147.7164 },
-  { id: 'yellowknife', name: 'Yellowknife', country: 'Canada', lat: 62.4540, lon: -114.3718 },
-  { id: 'abisko', name: 'Abisko', country: 'Sweden', lat: 68.3495, lon: 18.8312 }
+const COLOR_OPTIONS = [
+  { name: 'Emerald Green (#10b981)', value: '#10b981' },
+  { name: 'Cyan Blue (#06b6d4)', value: '#06b6d4' },
+  { name: 'Amber Gold (#f59e0b)', value: '#f59e0b' },
+  { name: 'Hot Pink (#ec4899)', value: '#ec4899' },
+  { name: 'Electric Violet (#8b5cf6)', value: '#8b5cf6' },
+  { name: 'Sky Blue (#38bdf8)', value: '#38bdf8' }
 ]
 
 AppSettingsPage({
   state: {
-    inputName: '',
-    inputLat: '',
-    inputLon: ''
+    selectedColor: '#10b981'
   },
 
   build(props) {
-    let savedLocations = []
+    let currentColor = '#10b981'
     try {
-      const raw = props.settingsStorage.getItem('savedLocations')
-      if (raw) {
-        savedLocations = typeof raw === 'string' ? JSON.parse(raw) : raw
+      const stored = props.settingsStorage.getItem('textColor')
+      if (stored) {
+        currentColor = typeof stored === 'string' ? stored : stored.hex || stored
       }
     } catch (e) {
-      console.log('[AuroraSettings] Error reading savedLocations:', e)
+      console.log('[ZeppHelloSettings] Error reading settingsStorage:', e)
     }
-
-    if (!savedLocations || savedLocations.length === 0) {
-      savedLocations = [...DEFAULT_PRESET_LOCATIONS]
-      props.settingsStorage.setItem('savedLocations', JSON.stringify(savedLocations))
-    }
-
-    let activeLocationId = props.settingsStorage.getItem('activeLocationId') || 'gps'
-
-    const selectOptions = [
-      { name: 'Watch GPS (Live Hardware Sensor)', value: 'gps' },
-      ...savedLocations.map(loc => ({
-        name: `${loc.name} · ${loc.lat.toFixed(2)}°N, ${loc.lon.toFixed(2)}°E`,
-        value: loc.id
-      }))
-    ]
 
     return View(
       {
@@ -65,7 +44,7 @@ AppSettingsPage({
         }
       },
       [
-        // Clean Title Block without badges
+        // Header
         View(
           { style: { paddingBottom: '12px', borderBottom: '1px solid #1e293b' } },
           [
@@ -74,20 +53,19 @@ AppSettingsPage({
                 fontSize: '20px',
                 fontWeight: '600',
                 color: '#f8fafc',
-                letterSpacing: '-0.02em',
                 marginBottom: '4px'
               }
-            }, 'Aurora Target & Locations'),
+            }, 'ZeppHello Customizer'),
             Text({
               style: { fontSize: '13px', color: '#94a3b8' }
-            }, 'Choose active target coordinates synced to Amazfit Active 3')
+            }, 'Configure default text color for Amazfit smartwatch')
           ]
         ),
 
-        // Section 1: Active Target Mode
+        // Color Selection Section
         Section(
           {
-            title: 'ACTIVE TARGET MODE',
+            title: 'TEXT COLOR THEME',
             style: {
               backgroundColor: '#111827',
               border: '1px solid #1f2937',
@@ -98,19 +76,20 @@ AppSettingsPage({
           [
             Text({
               style: { fontSize: '12px', color: '#94a3b8', marginBottom: '12px', lineHeight: '18px' }
-            }, 'Select whether the watch queries NOAA space weather using real-time GPS or a saved destination:'),
+            }, 'Select the default highlight color for the Hello message on your watch:'),
+
             Select({
-              label: 'Selected Location',
-              settingsKey: 'activeLocationId',
-              options: selectOptions
+              label: 'Hello Text Color',
+              settingsKey: 'textColor',
+              options: COLOR_OPTIONS
             })
           ]
         ),
 
-        // Section 2: Saved Locations List
+        // Quick Preset Swatches Section
         Section(
           {
-            title: `SAVED DESTINATIONS (${savedLocations.length})`,
+            title: 'QUICK SWATCHES',
             style: {
               backgroundColor: '#111827',
               border: '1px solid #1f2937',
@@ -120,158 +99,58 @@ AppSettingsPage({
           },
           [
             Text({
-              style: { fontSize: '12px', color: '#94a3b8', marginBottom: '12px', lineHeight: '18px' }
-            }, 'Synced to watch. Tap the top location on the watch face to cycle through these destinations.'),
+              style: { fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }
+            }, 'Tap any swatch to apply instantly:'),
 
-            ...savedLocations.map((loc) => {
-              const isSelected = activeLocationId === loc.id
-              return View(
-                {
+            View(
+              {
+                style: {
+                  display: 'flex',
+                  flexDirection: 'row',
+                  gap: '10px',
+                  flexWrap: 'wrap'
+                }
+              },
+              COLOR_OPTIONS.map(opt => {
+                const isActive = currentColor.toLowerCase() === opt.value.toLowerCase()
+                return Button({
+                  label: opt.name.split(' ')[0],
                   style: {
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px 14px',
-                    backgroundColor: isSelected ? '#132e27' : '#0d131f',
-                    border: isSelected ? '1px solid #059669' : '1px solid #1f2937',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    padding: '8px 14px',
+                    backgroundColor: opt.value,
+                    color: '#000000',
                     borderRadius: '8px',
-                    marginBottom: '8px'
+                    border: isActive ? '2px solid #ffffff' : 'none'
+                  },
+                  onClick: () => {
+                    props.settingsStorage.setItem('textColor', opt.value)
                   }
-                },
-                [
-                  View({ style: { display: 'flex', flexDirection: 'column', gap: '2px' } }, [
-                    View({ style: { display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '6px' } }, [
-                      Text({
-                        style: {
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          color: isSelected ? '#34d399' : '#f8fafc'
-                        }
-                      }, loc.name),
-                      isSelected
-                        ? Text({ style: { fontSize: '12px', color: '#34d399', fontWeight: '500' } }, '· Active')
-                        : null
-                    ]),
-                    Text({
-                      style: { fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace' }
-                    }, `${loc.lat.toFixed(2)}°N, ${loc.lon.toFixed(2)}°E ${loc.country ? `· ${loc.country}` : ''}`)
-                  ]),
-                  View({ style: { display: 'flex', flexDirection: 'row', gap: '8px' } }, [
-                    !isSelected
-                      ? Button({
-                          label: 'Set Active',
-                          style: {
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            padding: '6px 12px',
-                            backgroundColor: '#1e293b',
-                            color: '#e2e8f0',
-                            borderRadius: '6px'
-                          },
-                          onClick: () => {
-                            props.settingsStorage.setItem('activeLocationId', loc.id)
-                          }
-                        })
-                      : null,
-                    Button({
-                      label: 'Delete',
-                      style: {
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        padding: '6px 10px',
-                        backgroundColor: '#2d1517',
-                        color: '#f87171',
-                        borderRadius: '6px'
-                      },
-                      onClick: () => {
-                        const updated = savedLocations.filter(item => item.id !== loc.id)
-                        props.settingsStorage.setItem('savedLocations', JSON.stringify(updated))
-                        if (activeLocationId === loc.id) {
-                          props.settingsStorage.setItem('activeLocationId', 'gps')
-                        }
-                      }
-                    })
-                  ])
-                ]
-              )
-            })
+                })
+              })
+            )
           ]
         ),
 
-        // Section 3: Add Custom Coordinates
-        Section(
+        // Template Documentation Footer
+        View(
           {
-            title: 'ADD DESTINATION',
             style: {
-              backgroundColor: '#111827',
+              backgroundColor: '#0d131f',
               border: '1px solid #1f2937',
               borderRadius: '12px',
-              padding: '16px'
+              padding: '16px',
+              marginTop: '8px'
             }
           },
           [
-            TextInput({
-              label: 'Destination Name',
-              placeholder: 'e.g. Abisko Sky Station',
-              value: this.state.inputName,
-              onChange: (val) => {
-                this.state.inputName = val
-              }
-            }),
-            TextInput({
-              label: 'Latitude (°N)',
-              placeholder: 'e.g. 68.35',
-              value: this.state.inputLat,
-              onChange: (val) => {
-                this.state.inputLat = val
-              }
-            }),
-            TextInput({
-              label: 'Longitude (°E/W)',
-              placeholder: 'e.g. 18.83 (negative for West)',
-              value: this.state.inputLon,
-              onChange: (val) => {
-                this.state.inputLon = val
-              }
-            }),
-            Button({
-              label: 'Add Destination',
-              style: {
-                backgroundColor: '#059669',
-                color: '#ffffff',
-                fontWeight: '600',
-                fontSize: '14px',
-                marginTop: '14px',
-                padding: '10px',
-                borderRadius: '8px',
-                width: '100%'
-              },
-              onClick: () => {
-                const name = (this.state.inputName || '').trim()
-                const lat = parseFloat(this.state.inputLat)
-                const lon = parseFloat(this.state.inputLon)
-
-                if (!name || isNaN(lat) || isNaN(lon)) {
-                  return
-                }
-
-                const newLoc = {
-                  id: 'loc_' + Date.now(),
-                  name,
-                  lat,
-                  lon
-                }
-
-                const updated = [...savedLocations, newLoc]
-                props.settingsStorage.setItem('savedLocations', JSON.stringify(updated))
-                props.settingsStorage.setItem('activeLocationId', newLoc.id)
-
-                this.state.inputName = ''
-                this.state.inputLat = ''
-                this.state.inputLon = ''
-              }
-            })
+            Text({
+              style: { fontSize: '13px', fontWeight: '600', color: '#38bdf8', marginBottom: '6px' }
+            }, '💡 Developer Template Notes'),
+            Text({
+              style: { fontSize: '12px', color: '#94a3b8', lineHeight: '18px' }
+            }, 'To build your own app, modify page/index.js for watch UI, app-side/index.js for APIs, and setting/index.js for user options.')
           ]
         )
       ]

@@ -1,57 +1,34 @@
 /**
- * Aurora Tracker - Zepp OS Secondary Widget (Swipe-Left Widget)
+ * ZeppHello - Secondary Widget (Swipe-Left Glanceable Widget)
  * Target Device: Amazfit Active 3 (Round 466x466 AMOLED Screen)
  *
- * SecondaryWidget allows users to access an interactive glanceable view
- * by swiping left from their Watchface.
- *
- * Implements Zepp OS 2.x & 3.x SecondaryWidget lifecycle:
- * - onInit: initialize state and read cached data
- * - build: render full-screen AMOLED widget
- * - onResume: refresh view if updated data is available
- * - click: jumps directly to the full watch app (page/index)
+ * TEMPLATE ARCHITECTURE NOTES:
+ * - SecondaryWidget provides a full-screen glance view when swiping left from the watchface.
+ * - Perfect for secondary information or quick actions.
  */
 
 const SCREEN_SIZE = 466
-const CENTER_X = 233
-const CENTER_Y = 233
-
-// AMOLED Colors
-const COLOR_BLACK = 0x000000
-const COLOR_ARC_BG = 0x1e293b
-const COLOR_AURORA_HIGH = 0x10b981
-const COLOR_AURORA_MED = 0x06b6d4
-const COLOR_AURORA_LOW = 0xf59e0b
-const COLOR_AURORA_NONE = 0xef4444
-const COLOR_TEXT_MUTED = 0x94a3b8
-const COLOR_TEXT_DIM = 0x64748b
-const COLOR_TEXT_BRIGHT = 0xf8fafc
-const COLOR_TEXT_SKY = 0x38bdf8
 
 SecondaryWidget({
   state: {
-    auroraData: null,
-    locationText: 'Live GPS'
+    textColor: '#10b981',
+    clickCount: 0
   },
 
   widgets: {
     bgArc: null,
-    progressArc: null,
-    chanceValue: null,
-    statusText: null,
-    metricsRow: null,
-    locationLabel: null,
-    tapHint: null,
+    titleLabel: null,
+    helloLabel: null,
+    hintLabel: null,
     clickOverlay: null
   },
 
   onInit() {
-    console.log('[AuroraTracker] SecondaryWidget initialized')
+    console.log('[ZeppHello] SecondaryWidget initialized')
     const app = typeof getApp === 'function' ? getApp() : null
-    if (app && app._options && app._options.globalData && app._options.globalData.auroraData) {
-      this.state.auroraData = app._options.globalData.auroraData
-      if (app._options.globalData.currentLocationName) {
-        this.state.locationText = app._options.globalData.currentLocationName
+    if (app && app._options && app._options.globalData) {
+      if (app._options.globalData.clickCount !== undefined) {
+        this.state.clickCount = app._options.globalData.clickCount
       }
     }
   },
@@ -59,7 +36,7 @@ SecondaryWidget({
   build() {
     if (typeof hmUI === 'undefined') return
 
-    // 1. Background Arc (sweep 270 deg)
+    // 1. Background frame arc
     this.widgets.bgArc = hmUI.createWidget(hmUI.widget.ARC, {
       x: 36,
       y: 36,
@@ -67,115 +44,50 @@ SecondaryWidget({
       h: 394,
       start_angle: 135,
       end_angle: 405,
-      color: COLOR_ARC_BG,
+      color: 0x1e293b,
       line_width: 8
     })
 
-    const data = this.state.auroraData
-    const chance = data ? data.chancePercent : 85
-    const sweep = Math.round((Math.min(100, Math.max(0, chance)) / 100) * 270)
-    const endAngle = 135 + sweep
-
-    let chanceColor = COLOR_AURORA_HIGH
-    let statusDesc = 'VERY HIGH VISIBILITY'
-
-    if (chance >= 70) {
-      chanceColor = COLOR_AURORA_HIGH
-      statusDesc = 'VERY HIGH VISIBILITY'
-    } else if (chance >= 45) {
-      chanceColor = COLOR_AURORA_MED
-      statusDesc = 'MODERATE VISIBILITY'
-    } else if (chance >= 20) {
-      chanceColor = COLOR_AURORA_LOW
-      statusDesc = 'POSSIBLE AT HORIZON'
-    } else {
-      chanceColor = COLOR_AURORA_NONE
-      statusDesc = 'LOW PROBABILITY'
-    }
-
-    // 2. Active Arc
-    if (sweep > 0) {
-      this.widgets.progressArc = hmUI.createWidget(hmUI.widget.ARC, {
-        x: 36,
-        y: 36,
-        w: 394,
-        h: 394,
-        start_angle: 135,
-        end_angle: endAngle,
-        color: chanceColor,
-        line_width: 8
-      })
-    }
-
-    // 3. Location & Header
-    this.widgets.locationLabel = hmUI.createWidget(hmUI.widget.TEXT, {
+    // 2. Title
+    this.widgets.titleLabel = hmUI.createWidget(hmUI.widget.TEXT, {
       x: 33,
-      y: 90,
+      y: 120,
       w: 400,
       h: 24,
-      color: COLOR_TEXT_MUTED,
+      color: 0x38bdf8,
       text_size: 16,
       align_h: hmUI.align.CENTER_H,
       align_v: hmUI.align.CENTER_V,
-      text: `AURORA · ${this.state.locationText}`
+      text: 'ZEPPHELLO QUICK GLANCE'
     })
 
-    // 4. Probability Value
-    this.widgets.chanceValue = hmUI.createWidget(hmUI.widget.TEXT, {
+    // 3. Hello message
+    this.widgets.helloLabel = hmUI.createWidget(hmUI.widget.TEXT, {
       x: 33,
-      y: 130,
+      y: 170,
       w: 400,
-      h: 70,
-      color: chanceColor,
-      text_size: 64,
+      h: 60,
+      color: 0x10b981,
+      text_size: 44,
       align_h: hmUI.align.CENTER_H,
       align_v: hmUI.align.CENTER_V,
-      text: `${chance}%`
+      text: 'Hello, Zepp OS!'
     })
 
-    // 5. Status Text
-    this.widgets.statusText = hmUI.createWidget(hmUI.widget.TEXT, {
-      x: 33,
-      y: 212,
-      w: 400,
-      h: 28,
-      color: COLOR_TEXT_BRIGHT,
-      text_size: 18,
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V,
-      text: statusDesc
-    })
-
-    const kp = data && data.kp !== undefined ? data.kp : 5.2
-    const clouds = data && data.clouds !== undefined ? data.clouds : 12
-
-    // 6. Metrics
-    this.widgets.metricsRow = hmUI.createWidget(hmUI.widget.TEXT, {
+    // 4. Hint
+    this.widgets.hintLabel = hmUI.createWidget(hmUI.widget.TEXT, {
       x: 33,
       y: 250,
       w: 400,
-      h: 26,
-      color: COLOR_TEXT_SKY,
-      text_size: 17,
+      h: 24,
+      color: 0x94a3b8,
+      text_size: 15,
       align_h: hmUI.align.CENTER_H,
       align_v: hmUI.align.CENTER_V,
-      text: `Kp ${kp} · Clouds ${clouds}%`
+      text: `Total Taps: ${this.state.clickCount} · Tap to launch`
     })
 
-    // 7. Tap to open full app
-    this.widgets.tapHint = hmUI.createWidget(hmUI.widget.TEXT, {
-      x: 33,
-      y: 330,
-      w: 400,
-      h: 22,
-      color: COLOR_TEXT_DIM,
-      text_size: 14,
-      align_h: hmUI.align.CENTER_H,
-      align_v: hmUI.align.CENTER_V,
-      text: 'Tap to open Aurora Tracker'
-    })
-
-    // 8. Full screen click overlay
+    // 5. Click overlay
     this.widgets.clickOverlay = hmUI.createWidget(hmUI.widget.BUTTON, {
       x: 0,
       y: 0,
@@ -184,7 +96,6 @@ SecondaryWidget({
       normal_color: 0x000000,
       press_color: 0x1e293b,
       click_func: () => {
-        console.log('[AuroraTracker] SecondaryWidget tapped -> Opening main app')
         if (typeof hmApp !== 'undefined' && hmApp.gotoPage) {
           hmApp.gotoPage({ url: 'page/index' })
         }
@@ -193,25 +104,18 @@ SecondaryWidget({
   },
 
   onResume() {
-    console.log('[AuroraTracker] SecondaryWidget onResume')
     const app = typeof getApp === 'function' ? getApp() : null
-    if (app && app._options && app._options.globalData && app._options.globalData.auroraData) {
-      const data = app._options.globalData.auroraData
-      this.state.auroraData = data
-      if (this.widgets.chanceValue) {
-        this.widgets.chanceValue.setProperty(hmUI.prop.TEXT, `${data.chancePercent}%`)
-      }
-      if (this.widgets.metricsRow) {
-        this.widgets.metricsRow.setProperty(hmUI.prop.TEXT, `Kp ${data.kp} · Clouds ${data.clouds}%`)
+    if (app && app._options && app._options.globalData) {
+      if (app._options.globalData.clickCount !== undefined && this.widgets.hintLabel) {
+        this.state.clickCount = app._options.globalData.clickCount
+        this.widgets.hintLabel.setProperty(
+          hmUI.prop.TEXT,
+          `Total Taps: ${this.state.clickCount} · Tap to launch`
+        )
       }
     }
   },
 
-  onPause() {
-    console.log('[AuroraTracker] SecondaryWidget onPause')
-  },
-
-  onDestroy() {
-    console.log('[AuroraTracker] SecondaryWidget onDestroy')
-  }
+  onPause() {},
+  onDestroy() {}
 })

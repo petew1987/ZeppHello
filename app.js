@@ -1,19 +1,25 @@
 /**
- * Aurora Tracker - Zepp OS Application Entry Point
- * Implements App lifecycle using @zeppos/zml/base-app
+ * ZeppHello - Zepp OS Application Entry Point
+ * 
+ * TEMPLATE ARCHITECTURE NOTES:
+ * - This is the root app.js file executed when the Zepp OS mini-app starts.
+ * - globalData is shared across pages, widgets, and side services.
+ * - Use BaseApp from @zeppos/zml/base-app for lifecycle management.
  */
 import { BaseApp } from '@zeppos/zml/base-app'
 
 App(
   BaseApp({
     globalData: {
-      appName: 'Aurora Tracker'
+      appName: 'ZeppHello',
+      textColor: '#10b981', // Default Emerald Green
+      clickCount: 0
     },
     onCreate(options) {
-      console.log('[AuroraTracker] App onCreate initialized')
+      console.log('[ZeppHello] App onCreate initialized')
     },
     onDestroy(options) {
-      console.log('[AuroraTracker] App onDestroy called')
+      console.log('[ZeppHello] App onDestroy called')
     }
   })
 )

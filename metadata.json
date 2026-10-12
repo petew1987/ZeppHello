@@ -1,6 +1,6 @@
 {
-  "name": "Aurora Tracker - Zepp OS Amazfit Mini-App",
-  "description": "Zepp OS 3.0 / 2.x Mini-App for Amazfit Active 3 with interactive 466x466 AMOLED watch emulator and live NOAA space weather engine.",
+  "name": "ZeppHello - Zepp OS Amazfit Template & App Builder",
+  "description": "Zepp OS 3.0 / 2.x Mini-App template by Stealth Apps for Amazfit smartwatches featuring interactive Hello message, customizable color settings, companion app side, widgets, and GitHub QR code installer generator for developer mode on Zepp App.",
   "requestFramePermissions": [
     "geolocation"
   ],
