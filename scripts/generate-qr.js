@@ -2,9 +2,8 @@
  * QR Code Generator for Zepp OS GitHub Actions Workflow
  * Developed by Stealth Apps
  *
- * NOTE: If changing or renaming your GitHub repository, update the default
- * repository identifier below (currently: petew1987/ZeppHello).
- * In GitHub Actions, process.env.GITHUB_REPOSITORY is set automatically.
+ * Generates terminal ASCII QR codes, PNG QR codes, and Markdown summary
+ * formatted with the `zpkd1://` protocol for the Zepp App Developer Mode scanner.
  */
 
 import fs from 'fs';
@@ -17,80 +16,72 @@ async function main() {
     fs.mkdirSync(distDir, { recursive: true });
   }
 
-  // Ensure package files exist
-  let zabFile = fs.readdirSync(distDir).find(f => f.endsWith('.zab'));
-  const zabPath = path.join(distDir, zabFile || 'zepphello.zab');
-  if (!fs.existsSync(zabPath)) {
-    fs.writeFileSync(zabPath, 'ZEPPHELLO_TEMPLATE_PACKAGE');
-    zabFile = 'zepphello.zab';
-  }
-
+  // Ensure standard .zab file exists
   const standardZabPath = path.join(distDir, 'zepphello.zab');
-  if (zabPath !== standardZabPath && fs.existsSync(zabPath)) {
-    fs.copyFileSync(zabPath, standardZabPath);
+  if (!fs.existsSync(standardZabPath)) {
+    const foundZab = fs.readdirSync(distDir).find(f => f.endsWith('.zab'));
+    if (foundZab) {
+      fs.copyFileSync(path.join(distDir, foundZab), standardZabPath);
+    }
   }
 
-  let zpkFile = fs.readdirSync(distDir).find(f => f.endsWith('.zpk'));
-  const zpkPath = path.join(distDir, zpkFile || 'zepphello.zpk');
-  if (!fs.existsSync(zpkPath)) {
-    fs.writeFileSync(zpkPath, 'ZEPPHELLO_TEMPLATE_PACKAGE');
-    zpkFile = 'zepphello.zpk';
-  }
-
+  // Ensure standard .zpk file exists
   const standardZpkPath = path.join(distDir, 'zepphello.zpk');
-  if (zpkPath !== standardZpkPath && fs.existsSync(zpkPath)) {
-    fs.copyFileSync(zpkPath, standardZpkPath);
+  if (!fs.existsSync(standardZpkPath)) {
+    const foundZpk = fs.readdirSync(distDir).find(f => f.endsWith('.zpk'));
+    if (foundZpk) {
+      fs.copyFileSync(path.join(distDir, foundZpk), standardZpkPath);
+    }
   }
 
-  const stats = fs.statSync(standardZpkPath);
-  const sizeMb = (stats.size / (1024 * 1024)).toFixed(2);
+  const zabStats = fs.existsSync(standardZabPath) ? fs.statSync(standardZabPath) : null;
+  const sizeMb = zabStats ? (zabStats.size / (1024 * 1024)).toFixed(2) : '1.0';
 
-  // NOTE: If changing the repository name, update this fallback URL:
-  // Full repository: https://github.com/petew1987/ZeppHello/
   const repo = process.env.GITHUB_REPOSITORY || 'petew1987/ZeppHello';
   const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com';
 
-  const downloadUrlZpk = `${serverUrl}/${repo}/releases/latest/download/zepphello.zpk`;
   const downloadUrlZab = `${serverUrl}/${repo}/releases/latest/download/zepphello.zab`;
+  const downloadUrlZpk = `${serverUrl}/${repo}/releases/latest/download/zepphello.zpk`;
 
   /**
    * ZEPP APP DEVELOPER MODE PROTOCOL:
-   * Zepp App Developer Mode scanner expects `zpkd1://` schema.
-   * Format: zpkd1://<url-without-https>
-   * IMPORTANT: The GitHub repository MUST be Public for the Zepp App to download.
+   * Zepp App expects `zpkd1://` pointing to the .zab bundle installer.
+   * The .zab bundle includes manifest.json which the Zepp App unpacks to identify the device.
    */
-  const zpkd1UrlZpk = `zpkd1://${downloadUrlZpk.replace(/^https?:\/\//, '')}`;
   const zpkd1UrlZab = `zpkd1://${downloadUrlZab.replace(/^https?:\/\//, '')}`;
+  const zpkd1UrlZpk = `zpkd1://${downloadUrlZpk.replace(/^https?:\/\//, '')}`;
 
-  const quickChartZpkd1Zpk = `https://quickchart.io/qr?text=${encodeURIComponent(zpkd1UrlZpk)}&size=320&margin=2`;
+  const quickChartZpkd1Zab = `https://quickchart.io/qr?text=${encodeURIComponent(zpkd1UrlZab)}&size=320&margin=2`;
 
   console.log('\n======================================================');
   console.log('       ZEPP APP DEVELOPER MODE SCANNER QR CODE');
-  console.log('       Publisher: Stealth Apps');
+  console.log('       Publisher:  Stealth Apps');
   console.log('       Repository: ' + repo);
-  console.log('       Protocol:  zpkd1:// (Recognized by Zepp App)');
+  console.log('       Bundle:     zepphello.zab');
+  console.log('       Protocol:   zpkd1:// (Recognized by Zepp App)');
   console.log('======================================================\n');
   try {
-    const stringQr = await QRCode.toString(zpkd1UrlZpk, { type: 'terminal', small: true });
+    const stringQr = await QRCode.toString(zpkd1UrlZab, { type: 'terminal', small: true });
     console.log(stringQr);
   } catch (err) {
     console.warn('Terminal QR error:', err.message);
   }
 
-  console.log(`\nZepp Developer Scheme (.zpk): ${zpkd1UrlZpk}`);
-  console.log(`Direct Package URL:           ${downloadUrlZpk}`);
+  console.log(`\nZepp Developer Scheme (.zab): ${zpkd1UrlZab}`);
+  console.log(`Direct Package URL:           ${downloadUrlZab}`);
   console.log('======================================================\n');
 
-  // Generate PNG QR codes
-  const qrPngZpk = path.join(distDir, 'install-qrcode.png');
-  await QRCode.toFile(qrPngZpk, zpkd1UrlZpk, {
+  // Primary install QR code is .zab bundle
+  const qrPngZab = path.join(distDir, 'install-qrcode.png');
+  await QRCode.toFile(qrPngZab, zpkd1UrlZab, {
     width: 420,
     margin: 2,
     color: { dark: '#000000', light: '#ffffff' }
   });
 
-  const qrPngZab = path.join(distDir, 'install-qrcode-zab.png');
-  await QRCode.toFile(qrPngZab, zpkd1UrlZab, {
+  // Secondary install QR code for single device .zpk
+  const qrPngZpk = path.join(distDir, 'install-qrcode-zpk.png');
+  await QRCode.toFile(qrPngZpk, zpkd1UrlZpk, {
     width: 420,
     margin: 2,
     color: { dark: '#000000', light: '#ffffff' }
@@ -102,14 +93,14 @@ async function main() {
     const summaryMarkdown = `
 # ⌚ ZeppHello — Zepp OS Template by Stealth Apps
 
-The Zepp OS application package has been built successfully for repository **${repo}**!
+The Zepp OS application bundle has been built successfully for repository **${repo}**!
 
 ---
 
 ### 📱 1. Scan to Install via Zepp App Developer Mode
 
 <div align="center">
-  <img src="${quickChartZpkd1Zpk}" width="280" height="280" alt="Zepp Developer Mode QR Code" />
+  <img src="${quickChartZpkd1Zab}" width="280" height="280" alt="Zepp Developer Mode QR Code" />
   <p><strong>Scan with Zepp App &rarr; Profile &rarr; [Watch] &rarr; Developer Mode &rarr; Scanner Icon (top-right)</strong></p>
 </div>
 
@@ -119,9 +110,9 @@ The Zepp OS application package has been built successfully for repository **${r
 
 | Resource | Protocol / Link | Details |
 | :--- | :--- | :--- |
-| **Zepp Developer URL** | \`${zpkd1UrlZpk}\` | For Zepp App Developer Mode scanner |
-| **Single Target (.zpk)** | [Download zepphello.zpk](${downloadUrlZpk}) | Amazfit Active 3 target package (${sizeMb} MB) |
-| **Full Package (.zab)** | [Download zepphello.zab](${downloadUrlZab}) | Multi-device package |
+| **Zepp Developer URL** | \`${zpkd1UrlZab}\` | For Zepp App Developer Mode scanner |
+| **Full Bundle (.zab)** | [Download zepphello.zab](${downloadUrlZab}) | Multi-device bundle with manifest (${sizeMb} MB) |
+| **Single Target (.zpk)** | [Download zepphello.zpk](${downloadUrlZpk}) | Amazfit Active 3 target package |
 | **QR Code Image (PNG)** | [Download install-qrcode.png](${serverUrl}/${repo}/releases/latest/download/install-qrcode.png) | High-res QR file |
 
 ---
@@ -129,7 +120,7 @@ The Zepp OS application package has been built successfully for repository **${r
 ### 🛠️ GitHub Repository Requirements
 
 1. **Repository Visibility Must Be Public:**
-   Zepp App downloads files as an unauthenticated client. If the repository is private, GitHub denies access. Set repository to Public in **Settings &rarr; Change repository visibility &rarr; Make public**.
+   Zepp App downloads files without authentication. Set repository to Public in **Settings &rarr; Change repository visibility &rarr; Make public**.
 2. **Workflow Permissions:**
    Ensure Actions can create releases in **Settings &rarr; Actions &rarr; General &rarr; Workflow permissions &rarr; Read and write permissions**.
 

@@ -1,16 +1,17 @@
 /**
- * Build Zepp OS Package (.zpk and .zab) using JSZip
- * Creates installable packages in both public/ and dist/
+ * Official Zepp OS Package Builder
+ * Invokes Zeus CLI to produce authentic, compiled QuickJS bytecode packages
+ * and copies the .zab and .zpk files to dist/ and public/
  */
 
 import fs from 'fs';
 import path from 'path';
-import JSZip from 'jszip';
+import { execSync } from 'child_process';
 
-async function buildPackages() {
+async function main() {
   const rootDir = process.cwd();
-  const publicDir = path.join(rootDir, 'public');
   const distDir = path.join(rootDir, 'dist');
+  const publicDir = path.join(rootDir, 'public');
 
   if (!fs.existsSync(publicDir)) {
     fs.mkdirSync(publicDir, { recursive: true });
@@ -19,62 +20,72 @@ async function buildPackages() {
     fs.mkdirSync(distDir, { recursive: true });
   }
 
-  const zip = new JSZip();
+  console.log('⚡ Compiling Zepp OS package with Zeus CLI...');
+  try {
+    // Run native zeus build
+    execSync('npx zeus build', { stdio: 'inherit', cwd: rootDir });
+  } catch (err) {
+    console.error('Zeus build failed:', err.message);
+    process.exit(1);
+  }
 
-  // Add root files to package
-  const filesToAdd = [
-    'app.json',
-    'app.js',
-    'page/index.js',
-    'app-side/index.js',
-    'setting/index.js',
-    'app-widget/index.js',
-    'secondary-widget/index.js'
-  ];
+  // Find the newly generated .zab in dist/
+  const zabFiles = fs.readdirSync(distDir)
+    .filter(f => f.endsWith('.zab') && f !== 'zepphello.zab')
+    .map(f => ({ name: f, time: fs.statSync(path.join(distDir, f)).mtimeMs }))
+    .sort((a, b) => b.time - a.time);
 
-  for (const relPath of filesToAdd) {
-    const fullPath = path.join(rootDir, relPath);
-    if (fs.existsSync(fullPath)) {
-      zip.file(relPath, fs.readFileSync(fullPath, 'utf8'));
+  if (zabFiles.length === 0) {
+    console.error('No .zab bundle found in dist/');
+    process.exit(1);
+  }
+
+  const latestZab = path.join(distDir, zabFiles[0].name);
+  console.log(`📦 Found compiled bundle: ${zabFiles[0].name}`);
+
+  // Copy official .zab bundle to standard locations
+  fs.copyFileSync(latestZab, path.join(distDir, 'zepphello.zab'));
+  fs.copyFileSync(latestZab, path.join(publicDir, 'zepphello.zab'));
+  console.log('✅ Generated authentic zepphello.zab in dist/ and public/');
+
+  // Extract manifest.json and device .zpk for round-466
+  try {
+    execSync(`unzip -o "${latestZab}" -d "${path.join(distDir, 'extracted')}"`, { stdio: 'ignore' });
+    const extractedDir = path.join(distDir, 'extracted');
+    const manifestPath = path.join(extractedDir, 'manifest.json');
+
+    let zpkTarget = null;
+    if (fs.existsSync(manifestPath)) {
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      // Find round-466 target
+      const match = manifest.zpks?.find((z) =>
+        z.platforms?.some((p) => p.screenResolution === '466x466')
+      );
+      if (match && match.name && fs.existsSync(path.join(extractedDir, match.name))) {
+        zpkTarget = path.join(extractedDir, match.name);
+      }
     }
+
+    if (!zpkTarget) {
+      // Fallback: pick any .zpk from extracted
+      const anyZpk = fs.readdirSync(extractedDir).find(f => f.endsWith('.zpk'));
+      if (anyZpk) zpkTarget = path.join(extractedDir, anyZpk);
+    }
+
+    if (zpkTarget) {
+      fs.copyFileSync(zpkTarget, path.join(distDir, 'zepphello.zpk'));
+      fs.copyFileSync(zpkTarget, path.join(publicDir, 'zepphello.zpk'));
+      console.log('✅ Extracted genuine device zepphello.zpk to dist/ and public/');
+    }
+
+    // Clean up temporary extraction directory
+    fs.rmSync(extractedDir, { recursive: true, force: true });
+  } catch (err) {
+    console.warn('Could not extract individual .zpk from bundle:', err.message);
   }
-
-  // Add icon if present
-  const iconPath = path.join(rootDir, 'icon.png');
-  if (fs.existsSync(iconPath)) {
-    zip.file('icon.png', fs.readFileSync(iconPath));
-  }
-
-  // Generate .zpk binary buffer
-  const zpkBuffer = await zip.generateAsync({
-    type: 'nodebuffer',
-    compression: 'DEFLATE',
-    compressionOptions: { level: 9 }
-  });
-
-  // Write .zpk to public/ and dist/
-  fs.writeFileSync(path.join(publicDir, 'zepphello.zpk'), zpkBuffer);
-  fs.writeFileSync(path.join(distDir, 'zepphello.zpk'), zpkBuffer);
-
-  // Generate .zab (ZAB is multi-device package archive containing the .zpk)
-  const zabZip = new JSZip();
-  zabZip.file('app.json', fs.readFileSync(path.join(rootDir, 'app.json'), 'utf8'));
-  zabZip.file('device.round-466.zpk', zpkBuffer);
-  zabZip.file('zepphello.zpk', zpkBuffer);
-
-  const zabBuffer = await zabZip.generateAsync({
-    type: 'nodebuffer',
-    compression: 'DEFLATE',
-    compressionOptions: { level: 9 }
-  });
-
-  fs.writeFileSync(path.join(publicDir, 'zepphello.zab'), zabBuffer);
-  fs.writeFileSync(path.join(distDir, 'zepphello.zab'), zabBuffer);
-
-  console.log('✅ Generated zepphello.zpk and zepphello.zab in public/ and dist/');
 }
 
-buildPackages().catch(err => {
-  console.error('Package build failed:', err);
+main().catch(err => {
+  console.error('Build package script error:', err);
   process.exit(1);
 });
