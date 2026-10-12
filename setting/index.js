@@ -8,21 +8,21 @@
  */
 
 const COLOR_OPTIONS = [
+  { name: 'Purple (#a855f7)', value: '#a855f7' },
   { name: 'Emerald Green (#10b981)', value: '#10b981' },
   { name: 'Cyan Blue (#06b6d4)', value: '#06b6d4' },
   { name: 'Amber Gold (#f59e0b)', value: '#f59e0b' },
-  { name: 'Hot Pink (#ec4899)', value: '#ec4899' },
-  { name: 'Electric Violet (#8b5cf6)', value: '#8b5cf6' },
+  { name: 'Hot Pink (#f43f5e)', value: '#f43f5e' },
   { name: 'Sky Blue (#38bdf8)', value: '#38bdf8' }
 ]
 
 AppSettingsPage({
   state: {
-    selectedColor: '#10b981'
+    selectedColor: '#a855f7'
   },
 
   build(props) {
-    let currentColor = '#10b981'
+    let currentColor = '#a855f7'
     try {
       const stored = props.settingsStorage.getItem('textColor')
       if (stored) {

@@ -21,7 +21,7 @@ AppSideService(
       console.log('[ZeppHelloAppSide] Received request:', req.type)
 
       if (req.type === 'GET_SETTINGS') {
-        let textColor = '#10b981' // Default Emerald
+        let textColor = '#a855f7' // Default Purple
         try {
           if (typeof settingsStorage !== 'undefined') {
             const stored = settingsStorage.getItem('textColor')
